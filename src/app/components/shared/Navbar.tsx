@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ShoppingCart, Utensils } from "lucide-react";
+import { useCart } from "@/context/CartContext";
 
 export interface NavbarProps {
     tableNumber?: string;
@@ -14,6 +15,7 @@ export function Navbar({
     cartCount = 0,
     onCartClick,
     }: NavbarProps) {
+        const { totalItems } = useCart();
     return (
         <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-3 bg-[#FAF7F2] backdrop-blur-md border-b border-stone-200">
             {/* Logo */}
@@ -43,7 +45,7 @@ export function Navbar({
                     <ShoppingCart size={18} />
                     {cartCount > 0 && (
                         <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
-                        {cartCount > 9 ? "9+" : cartCount}
+                            {totalItems}
                         </span>
                     )}
                 </button>

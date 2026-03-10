@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ShoppingCart } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import type { MenuItem } from "@/types";
+import { useCart } from "@/context/CartContext";
 
 interface MenuCardProps {
     item: MenuItem;
@@ -20,10 +21,16 @@ function getCategoryColor(name: string): string {
     return "bg-secondary-50 text-white";
 }
 
-export function MenuCard({ item, onAddToCart }: MenuCardProps) {
+export function MenuCard({ item }: MenuCardProps) {
+    const { addToCart } = useCart();
     const validImageUrl = item.imageUrl?.startsWith('http') 
         ? item.imageUrl 
         : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500'; 
+
+    // // Tambahkan pengecekan apakah item.imageUrl ada (tidak null/undefined)
+    // const validImageUrl = (item.imageUrl && item.imageUrl.trim() !== "") 
+    //     ? (item.imageUrl.startsWith('http') ? item.imageUrl : `http://localhost:8000/storage/${item.imageUrl}`)
+    //     : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500';
 
     return (
         <article className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 group">
@@ -33,6 +40,7 @@ export function MenuCard({ item, onAddToCart }: MenuCardProps) {
                     // src={item.imageUrl}
                     src={validImageUrl}
                     alt={item.name}
+                    unoptimized
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
@@ -55,8 +63,12 @@ export function MenuCard({ item, onAddToCart }: MenuCardProps) {
                     </span>
 
                     <button
-                        onClick={() => onAddToCart(item)}
-                        aria-label={`Tambah ${item.name} ke keranjang`}
+                        onClick={() => {
+                            alert("Tombol diklik!"); 
+                            console.log("Data Item:", item); 
+                            addToCart(item);
+                        }}
+                        type="button" 
                         className="flex items-center justify-center w-9 h-9 rounded-full bg-primary-10 text-white hover:bg-primary-20 active:scale-90 transition-all duration-200 shadow-sm"
                     >
                         <ShoppingCart size={16} />

@@ -12,6 +12,7 @@ import { Button }          from "@/app/components/ui/Button";
 import { useMenu }         from "@/hooks/useMenu";
 import { useCart }         from "@/hooks/useCart";
 import { formatCurrency }  from "@/lib/utils";
+import { ShoppingBag } from "lucide-react";
 import type { MenuItem }   from "@/types";
 
 const TABLE_NUMBER = "07";
@@ -144,22 +145,25 @@ export default function MenuPage() {
                 )}
             </section>
         </main>
+            {/* Floating Cart Button (Hanya muncul jika ada item) */}
+            {/* <div className="relative min-h-screen pb-32"> */}
+                {/* {totalItems > 0 && ( */}
+                    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-6">
+                        <button className="w-full bg-[#8B6E4E] text-white py-4 px-8 rounded-full flex items-center justify-between shadow-2xl transition-all active:scale-95">
+                            <div className="flex items-center gap-3">
+                                <ShoppingBag size={20} />
+                                <span className="font-semibold">
+                                    View Cart ({totalItems} items)
+                                </span>
+                            </div>
+                            <span className="font-bold pl-4 border-l border-white/20">
+                                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(totalPrice)}
+                            </span>
+                        </button>
+                    </div>
+                {/* )} */}
+            {/* </div> */}
         <Footer />
-
-        {/* Floating cart bar */}
-        {totalItems > 0 && !isCartOpen && (
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30">
-                <Button
-                    variant="cart"
-                    size="lg"
-                    onClick={() => setIsCartOpen(true)}
-                    className="shadow-xl px-8 gap-3"
-                >
-                    <span className="text-sm">🛒</span>
-                    View Cart ({totalItems} items) • {formatCurrency(totalPrice)}
-                </Button>
-            </div>
-        )}
 
         <CartDrawer
             isOpen={isCartOpen}
