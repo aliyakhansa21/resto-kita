@@ -1,68 +1,69 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { MenuItem } from "@/types";
+import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import type { MenuItem, CartItem } from "@/types";
 
-export interface CartItem extends MenuItem {
-    quantity: number;
-}
-
-interface CartContextType {
-    cartItems: CartItem[];
+interface CartContextValue {
+    items: CartItem[];
     addToCart: (item: MenuItem) => void;
-    removeFromCart: (id: number) => void;
+    removeItem: (menuItemId: string) => void;
+    updateQty: (menuItemId: string, qty: number) => void;
     clearCart: () => void;
     totalItems: number;
     totalPrice: number;
 }
 
-const CartContext = createContext<CartContextType | undefined>(undefined);
+const CartContext = createContext<CartContextValue | null>(null);
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
-    const [cartItems, setCartItems] = useState<CartItem[]>([]);
+export function CartProvider({ children }: { children: ReactNode }) {
+    const [items, setItems] = useState<CartItem[]>([]);
 
-    // Load data dari Local Storage 
-    useEffect(() => {
-        const savedCart = localStorage.getItem('resto-cart');
-        if (savedCart) setCartItems(JSON.parse(savedCart));
-    }, []);
-
-    // Simpan ke Local Storage setiap ada perubahan di cartItems
-    useEffect(() => {
-        localStorage.setItem('resto-cart', JSON.stringify(cartItems));
-    }, [cartItems]);
-
-    const addToCart = (item: MenuItem) => {
-        setCartItems((prev) => {
-            const existing = prev.find((i) => i.id == item.id);
-
+    const addToCart = useCallback((menuItem: MenuItem) => {
+        setItems((prev) => {
+            const existing = prev.find((i) => i.menuItem.id === menuItem.id);
             if (existing) {
                 return prev.map((i) =>
-                    i.id == item.id ? { ...i, quantity: i.quantity + 1 } : i
+                    i.menuItem.id === menuItem.id
+                        ? { ...i, quantity: i.quantity + 1 }
+                        : i
                 );
             }
-            return [...prev, { ...item, quantity: 1 }];
+            return [...prev, { menuItem, quantity: 1 }];
         });
-    };
+    }, []);
 
-    const removeFromCart = (id: number) => {
-        setCartItems(prev => prev.filter(i => Number(i.id) !== Number(id)));
-    };
+    const removeItem = useCallback((menuItemId: string) => {
+        setItems((prev) => prev.filter((i) => i.menuItem.id !== menuItemId));
+    }, []);
 
-    const clearCart = () => setCartItems([]);
+    const updateQty = useCallback((menuItemId: string, qty: number) => {
+        if (qty <= 0) {
+            setItems((prev) => prev.filter((i) => i.menuItem.id !== menuItemId));
+        } else {
+            setItems((prev) =>
+                prev.map((i) =>
+                    i.menuItem.id === menuItemId ? { ...i, quantity: qty } : i
+                )
+            );
+        }
+    }, []);
 
-    const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-    const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const clearCart = useCallback(() => setItems([]), []);
+
+    const totalItems = items.length;
+    const totalPrice = items.reduce((sum, i) => sum + i.menuItem.price * i.quantity, 0);
 
     return (
-        <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, clearCart, totalItems, totalPrice }}>
+        <CartContext.Provider
+            value={{ items, addToCart, removeItem, updateQty, clearCart, totalItems, totalPrice }}
+        >
             {children}
         </CartContext.Provider>
     );
 }
 
-export const useCart = () => {
-    const context = useContext(CartContext);
-    if (!context) throw new Error("useCart must be used within a CartProvider");
-    return context;
-};
+export function useCart(): CartContextValue {
+    const ctx = useContext(CartContext);
+    if (!ctx) throw new Error("useCart must be used inside <CartProvider>");
+    return ctx;
+}

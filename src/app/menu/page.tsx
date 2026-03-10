@@ -1,18 +1,17 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { ChevronDown, Utensils } from "lucide-react";
+import { ChevronDown, Utensils, ShoppingBag } from "lucide-react";
 import { Navbar }          from "@/app/components/shared/Navbar";
 import { Footer }          from "@/app/components/shared/Footer";
 import { MenuCard }        from "@/app/components/features/menu/MenuCard";
 import { CategoryFilter }  from "@/app/components/features/menu/CategoryFilter";
 import { SearchBar }       from "@/app/components/features/menu/SearchBar";
 import { CartDrawer }      from "@/app/components/features/cart/CartDrawer";
+import { FindUs }          from "@/app/components/features/menu/FindUs";
 import { Button }          from "@/app/components/ui/Button";
 import { useMenu }         from "@/hooks/useMenu";
-import { useCart }         from "@/hooks/useCart";
-import { formatCurrency }  from "@/lib/utils";
-import { ShoppingBag } from "lucide-react";
+import { useCart }         from "@/context/CartContext";
 import type { MenuItem }   from "@/types";
 
 const TABLE_NUMBER = "07";
@@ -28,28 +27,28 @@ export default function MenuPage() {
         search,
     });
 
-    // Cart state
+    // Cart state from context (frontend-only)
     const {
         items: cartItems,
-        addItem,
         removeItem,
         updateQty,
-        submitOrder,
-        isSubmitting,
         totalItems,
         totalPrice,
-    } = useCart(TABLE_NUMBER);
+    } = useCart();
 
     const handleSearch = useCallback((val: string) => setSearch(val), []);
 
+    // Submit order: send cartItems to backend, then clear
     const handleSubmitOrder = useCallback(async () => {
         try {
-        await submitOrder();
-        setIsCartOpen(false);
+            // TODO: integrate with your backend API here
+            // e.g. await fetch('/api/orders', { method: 'POST', body: JSON.stringify({ tableNumber: TABLE_NUMBER, items: cartItems }) })
+            console.log("Order submitted:", { tableNumber: TABLE_NUMBER, cartItems });
+            setIsCartOpen(false);
         } catch (err) {
-        console.error("Order failed:", err);
+            console.error("Order failed:", err);
         }
-    }, [submitOrder]);
+    }, [cartItems]);
 
     return (
         <>
@@ -60,9 +59,9 @@ export default function MenuPage() {
         />
 
         <main>
-            {/* Hero */}          
-            <section className="hero-background text-white text-center px-6 pt-16">
-                <div className="w-16 h-16 rounded-full backdrop-blur-figma flex items-center justify-center mb-6 shadow-lg z-10">
+            {/* Hero */}
+            <section className="hero-background text-white text-center px-6 pt-16 relative">
+                <div className="w-16 h-16 rounded-full backdrop-blur-figma flex items-center justify-center mb-6 shadow-lg z-10 mx-auto">
                     <Utensils size={30} className="text-white" />
                 </div>
                 <h1 className="text-5xl font-bold mb-3 tracking-tight">Our Restaurant</h1>
@@ -73,96 +72,102 @@ export default function MenuPage() {
                     variant="primary"
                     size="lg"
                     onClick={() =>
-                    document.getElementById("menu-catalog")?.scrollIntoView({ behavior: "smooth" })
+                        document.getElementById("menu-catalog")?.scrollIntoView({ behavior: "smooth" })
                     }
                 >
                     Explore Menu
                 </Button>
-                <div className="absolute bottom-8 text-white/60 flex flex-col items-center gap-1 animate-bounce">
+                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/60 flex flex-col items-center gap-1 animate-bounce">
                     <ChevronDown size={20} />
                     <ChevronDown size={20} className="-mt-3" />
                 </div>
-                <p className="absolute bottom-4 text-[10px] tracking-widest uppercase text-white/40">
+                <p className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[10px] tracking-widest uppercase text-white/40">
                     Scroll to Explore
                 </p>
             </section>
 
-                {/* Catalog */}
+            {/* Catalog */}
             <section
                 id="menu-catalog"
                 className="bg-[#FAF7F2] min-h-screen px-4 sm:px-6 lg:px-8 py-12 mx-auto"
-                >
+            >
                 {/* Filter row */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
                     <SearchBar onSearch={handleSearch} />
                     <CategoryFilter
-                    categories={categories}
-                    activeId={categoryId}
-                    onChange={setCategoryId}
+                        categories={categories}
+                        activeId={categoryId}
+                        onChange={setCategoryId}
                     />
                 </div>
 
                 {/* Loading skeleton */}
                 {isLoading && (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {Array.from({ length: 8 }).map((_, i) => (
-                        <div key={i} className="bg-white rounded-2xl overflow-hidden animate-pulse">
-                        <div className="h-44 bg-stone-200" />
-                        <div className="p-4 space-y-2">
-                            <div className="h-4 bg-stone-200 rounded w-3/4" />
-                            <div className="h-3 bg-stone-100 rounded w-full" />
-                            <div className="h-3 bg-stone-100 rounded w-2/3" />
-                            <div className="h-4 bg-stone-200 rounded w-1/3 mt-4" />
-                        </div>
-                        </div>
-                    ))}
+                        {Array.from({ length: 8 }).map((_, i) => (
+                            <div key={i} className="bg-white rounded-2xl overflow-hidden animate-pulse">
+                                <div className="h-44 bg-stone-200" />
+                                <div className="p-4 space-y-2">
+                                    <div className="h-4 bg-stone-200 rounded w-3/4" />
+                                    <div className="h-3 bg-stone-100 rounded w-full" />
+                                    <div className="h-3 bg-stone-100 rounded w-2/3" />
+                                    <div className="h-4 bg-stone-200 rounded w-1/3 mt-4" />
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 )}
 
                 {/* Error state */}
                 {isError && (
                     <div className="text-center py-20 text-red-500">
-                    <p className="text-lg font-semibold">Gagal memuat menu</p>
-                    <p className="text-sm text-red-400 mt-1">{error?.message}</p>
+                        <p className="text-lg font-semibold">Gagal memuat menu</p>
+                        <p className="text-sm text-red-400 mt-1">{error?.message}</p>
                     </div>
                 )}
 
                 {/* Empty state */}
                 {!isLoading && !isError && menuItems.length === 0 && (
                     <div className="text-center py-20 text-stone-400">
-                    <p className="text-lg">Menu tidak ditemukan</p>
-                    <p className="text-sm mt-1">Coba kata kunci atau kategori lain</p>
+                        <p className="text-lg">Menu tidak ditemukan</p>
+                        <p className="text-sm mt-1">Coba kata kunci atau kategori lain</p>
                     </div>
                 )}
 
                 {/* Menu grid */}
                 {!isLoading && !isError && menuItems.length > 0 && (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {menuItems.map((item: MenuItem) => (
-                        <MenuCard key={item.id} item={item} onAddToCart={addItem} />
-                    ))}
+                        {menuItems.map((item: MenuItem) => (
+                            <MenuCard key={item.id} item={item} />
+                        ))}
                     </div>
                 )}
             </section>
+
+            {/* Find Us */}
+            <FindUs />
         </main>
-            {/* Floating Cart Button (Hanya muncul jika ada item) */}
-            {/* <div className="relative min-h-screen pb-32"> */}
-                {/* {totalItems > 0 && ( */}
-                    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-6">
-                        <button className="w-full bg-[#8B6E4E] text-white py-4 px-8 rounded-full flex items-center justify-between shadow-2xl transition-all active:scale-95">
-                            <div className="flex items-center gap-3">
-                                <ShoppingBag size={20} />
-                                <span className="font-semibold">
-                                    View Cart ({totalItems} items)
-                                </span>
-                            </div>
-                            <span className="font-bold pl-4 border-l border-white/20">
-                                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(totalPrice)}
-                            </span>
-                        </button>
+
+        {/* Floating Cart Button — hanya muncul jika ada item */}
+        {totalItems > 0 && (
+            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-6">
+                <button
+                    onClick={() => setIsCartOpen(true)}
+                    className="w-full bg-[#8B6E4E] text-white py-4 px-8 rounded-full flex items-center justify-between shadow-2xl transition-all active:scale-95 hover:bg-[#7a6044]"
+                >
+                    <div className="flex items-center gap-3">
+                        <ShoppingBag size={20} />
+                        <span className="font-semibold">
+                            View Cart ({totalItems} item{totalItems > 1 ? "s" : ""})
+                        </span>
                     </div>
-                {/* )} */}
-            {/* </div> */}
+                    <span className="font-bold pl-4 border-l border-white/20">
+                        {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(totalPrice)}
+                    </span>
+                </button>
+            </div>
+        )}
+
         <Footer />
 
         <CartDrawer
@@ -174,7 +179,7 @@ export default function MenuPage() {
             onUpdateQty={updateQty}
             onRemove={removeItem}
             onSubmitOrder={handleSubmitOrder}
-            isSubmitting={isSubmitting}
+            isSubmitting={false}
             tableNumber={TABLE_NUMBER}
         />
         </>
