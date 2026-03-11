@@ -49,13 +49,13 @@ export function CartItem({ item, onUpdateQty, onRemove }: CartItemProps) {
                 aria-label="Kurangi jumlah"
                 >
                     <Minus size={12} />
-                    </button>
-                        <span className="text-sm font-bold w-5 text-center">{quantity}</span>
-                    <button
+                </button>
+                <span className="text-sm font-bold w-5 text-center">{quantity}</span>
+                <button
                     onClick={() => onUpdateQty(menuItem.id, quantity + 1)}
-                    className="w-6 h-6 rounded-full bg-amber-700 text-white flex items-center justify-center hover:bg-amber-800 transition-colors"
+                    className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary-30 transition-colors"
                     aria-label="Tambah jumlah"
-                    >
+                >
                     <Plus size={12} />
                 </button>
             </div>

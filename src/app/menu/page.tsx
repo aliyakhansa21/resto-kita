@@ -7,7 +7,7 @@ import { Footer }          from "@/app/components/shared/Footer";
 import { MenuCard }        from "@/app/components/features/menu/MenuCard";
 import { CategoryFilter }  from "@/app/components/features/menu/CategoryFilter";
 import { SearchBar }       from "@/app/components/features/menu/SearchBar";
-import { CartDrawer }      from "@/app/components/features/cart/CartDrawer";
+import { CartModal }      from "@/app/components/features/cart/CartModal";
 import { FindUs }          from "@/app/components/features/menu/FindUs";
 import { Button }          from "@/app/components/ui/Button";
 import { useMenu }         from "@/hooks/useMenu";
@@ -153,7 +153,7 @@ export default function MenuPage() {
             <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-6">
                 <button
                     onClick={() => setIsCartOpen(true)}
-                    className="w-full bg-[#8B6E4E] text-white py-4 px-8 rounded-full flex items-center justify-between shadow-2xl transition-all active:scale-95 hover:bg-[#7a6044]"
+                    className="w-full bg-primary text-white py-4 px-8 rounded-full flex items-center justify-between shadow-2xl transition-all active:scale-95 hover:bg-primary-30"
                 >
                     <div className="flex items-center gap-3">
                         <ShoppingBag size={20} />
@@ -170,7 +170,7 @@ export default function MenuPage() {
 
         <Footer />
 
-        <CartDrawer
+        <CartModal
             isOpen={isCartOpen}
             onClose={() => setIsCartOpen(false)}
             items={cartItems}
@@ -178,8 +178,9 @@ export default function MenuPage() {
             totalPrice={totalPrice}
             onUpdateQty={updateQty}
             onRemove={removeItem}
-            onSubmitOrder={handleSubmitOrder}
-            isSubmitting={false}
+            onCheckout={handleSubmitOrder}
+            // onSubmitOrder={handleSubmitOrder}
+            // isSubmitting={false}
             tableNumber={TABLE_NUMBER}
         />
         </>
