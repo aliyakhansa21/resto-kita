@@ -8,8 +8,10 @@ const api = axios.create({
     timeout: 10_000,
 });
 
-// Request interceptor
+// Request interceptor — attach Bearer token ke setiap request
 api.interceptors.request.use((config) => {
+    const token = process.env.NEXT_PUBLIC_API_TOKEN ?? "abc";
+    config.headers.Authorization = `Bearer ${token}`;
     return config;
 });
 
