@@ -45,8 +45,8 @@ export function CategoryFilter({ categories, activeId, onChange }: CategoryFilte
                 className={cn(
                     "flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold border transition-all duration-200 min-w-[160px] justify-between",
                     isOpen
-                        ? "bg-[#8B6E4E] text-white border-[#8B6E4E] shadow-md"
-                        : "bg-white text-stone-700 border-stone-200 hover:border-stone-400"
+                        ? "bg-primary-10 text-white shadow-md"
+                        : "bg-primary text-white hover:bg-primary-30"
                 )}
             >
                 <span>{activeLabel}</span>
