@@ -14,7 +14,8 @@ import { useMenu }         from "@/hooks/useMenu";
 import { useCart }         from "@/context/CartContext";
 import type { MenuItem }   from "@/types";
 
-const TABLE_NUMBER = "07";
+const TABLE_NUMBER = "1";
+const TABLE_TOKEN = "abc";
 
 export default function MenuPage() {
     const [categoryId, setCategoryId] = useState("all");
@@ -178,7 +179,7 @@ export default function MenuPage() {
             totalPrice={totalPrice}
             onUpdateQty={updateQty}
             onRemove={removeItem}
-            onCheckout={handleSubmitOrder}
+            tableToken={TABLE_TOKEN}
             // onSubmitOrder={handleSubmitOrder}
             // isSubmitting={false}
             tableNumber={TABLE_NUMBER}
