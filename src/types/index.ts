@@ -73,63 +73,79 @@ export interface OrderItem {
     item: MenuItem;
 }
 
-// ── Checkout ──────────────────────────────────────────────────────────────────
-
 export type PaymentMethod = "cash" | "non_cash";
 
 export interface CheckoutCategory {
-    id: number;
-    name: string;
-    description: string;
+  id: number;
+  name: string;
+  description: string;
 }
 
 export interface CheckoutMenuItem {
-    id: number;
-    name: string;
-    description: string;
-    price: string;
-    img: string;
-    is_active: number;
-    category: CheckoutCategory;
+  id: number;
+  name: string;
+  description: string;
+  price: string;
+  img: string;
+  is_active: number;
+  category: CheckoutCategory;
 }
 
 export interface CheckoutOrderItem {
-    id: number;
-    amount: number;
-    order: object;
-    item: CheckoutMenuItem;
+  id: number;
+  amount: number;
+  order: object;
+  item: CheckoutMenuItem;
 }
 
 export interface CheckoutOrder {
-    id: number;
-    confirmed: boolean;
-    order_items: CheckoutOrderItem[];
+  id: number;
+  confirmed: boolean;
+  order_items: CheckoutOrderItem[];
 }
 
 export interface CheckoutSession {
-    id: number;
-    grand_total: string;
-    status: string;
-    orders: CheckoutOrder[];
+  id: number;
+  grand_total: string;
+  status: string;
+  orders: CheckoutOrder[];
 }
 
-// ── Form ──────────────────────────────────────────────────────────────────────
+// POST /api/orders 
+
+export interface PlaceOrderItem {
+  item_id: number;
+  amount: number;
+}
+
+export interface PlaceOrderPayload {
+  orders: PlaceOrderItem[];
+}
+
+// Response POST /api/orders → { data: PlaceOrderResponse }
+export interface PlaceOrderResponse {
+  id: number;
+  confirmed: boolean;
+  order_items: CheckoutOrderItem[];
+}
+
+// Checkout form 
 
 export interface CheckoutForm {
-    name: string;
-    whatsapp: string;
-    table: string;
-    notes: string;
+  name: string;
+  whatsapp: string;
+  table: string;
+  notes: string;
 }
 
 export type CheckoutFormErrors = Partial<Record<keyof CheckoutForm, string>>;
 
-// ── Submit payload ────────────────────────────────────────────────────────────
+// POST /table-sessions/{token}/checkout 
 
 export interface CheckoutSubmitPayload {
-    customer_name: string;
-    whatsapp_number: string;
-    table_number: string;
-    notes: string;
-    payment_method: PaymentMethod;
+  customer_name: string;
+  whatsapp_number: string;
+  table_number: string;
+  notes: string;
+  payment_method: PaymentMethod;
 }
