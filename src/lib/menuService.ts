@@ -27,7 +27,8 @@ import type {
     }
 
     // GET /api/categories 
-    export async function fetchCategories(): Promise<Category[]> {
+    export async function fetchCategories(
+    ): Promise<Category[]> {
         const { data } = await api.get<ApiCategoriesResponse>("/categories");
         return data.data;
     }
