@@ -1,19 +1,23 @@
-// src/hooks/useCheckout.ts
-
-import { useState, useEffect } from "react";
-import { fetchCheckoutSession, submitCheckoutOrder } from "@/lib/checkoutService";
+import { useState } from "react";
+import { useCart } from "@/context/CartContext";
+import { placeOrder, confirmCheckout } from "@/lib/checkoutService";
 import type {
   CheckoutSession,
   CheckoutForm,
   CheckoutFormErrors,
   PaymentMethod,
-  CheckoutOrderItem,
+  CartItem,
+  PlaceOrderPayload,
 } from "@/types";
 
+export interface CompletedOrder {
+  session: CheckoutSession;
+  cartSnapshot: CartItem[];
+  paymentMethod: PaymentMethod;
+}
+
 interface UseCheckoutReturn {
-  checkoutData: CheckoutSession | null;
-  loading: boolean;
-  fetchError: string | null;
+  cartItems: CartItem[];
   subtotal: number;
   tax: number;
   grandTotal: number;
@@ -24,19 +28,17 @@ interface UseCheckoutReturn {
   setPaymentMethod: (m: PaymentMethod) => void;
   submitting: boolean;
   submitError: string | null;
-  completedOrder: (CheckoutSession & { paymentMethod: PaymentMethod }) | null;
+  completedOrder: CompletedOrder | null;
   handleSubmit: () => Promise<void>;
   reset: () => void;
 }
 
 export function useCheckout(token: string, initialTable?: string): UseCheckoutReturn {
-  const [checkoutData, setCheckoutData] = useState<CheckoutSession | null>(null);
+  const { items: cartItems, totalPrice, clearCart } = useCart();
 
-  // ── Kalau token kosong, langsung set loading=false & error ───────────────
-  const [loading, setLoading] = useState(Boolean(token));
-  const [fetchError, setFetchError] = useState<string | null>(
-    !token ? "Token sesi tidak ditemukan. Silakan scan ulang QR Code." : null
-  );
+  const subtotal = totalPrice;
+  const tax = subtotal * 0.1;
+  const grandTotal = subtotal + tax;
 
   const [form, setForm] = useState<CheckoutForm>({
     name: "",
@@ -46,46 +48,11 @@ export function useCheckout(token: string, initialTable?: string): UseCheckoutRe
   });
   const [formErrors, setFormErrors] = useState<CheckoutFormErrors>({});
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("non_cash");
-
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [completedOrder, setCompletedOrder] = useState<
-    (CheckoutSession & { paymentMethod: PaymentMethod }) | null
-  >(null);
+  const [completedOrder, setCompletedOrder] = useState<CompletedOrder | null>(null);
 
-  useEffect(() => {
-    // Guard: jangan fetch kalau token kosong
-    if (!token) {
-      setLoading(false);
-      setFetchError("Token sesi tidak ditemukan. Silakan scan ulang QR Code.");
-      return;
-    }
-
-    setLoading(true);
-    setFetchError(null);
-
-    fetchCheckoutSession(token)
-      .then((data) => setCheckoutData(data))
-      .catch((err: Error) => setFetchError(err.message))
-      .finally(() => setLoading(false));
-  }, [token]);
-
-  // ── Derived totals ────────────────────────────────────────────────────────
-  const items: CheckoutOrderItem[] = checkoutData
-    ? checkoutData.orders.flatMap((o) => o.order_items)
-    : [];
-
-  const subtotal = items.reduce(
-    (sum: number, oi: CheckoutOrderItem) =>
-      sum + parseFloat(oi.item.price) * oi.amount,
-    0
-  );
-  const tax = subtotal * 0.1;
-  const grandTotal = checkoutData
-    ? parseFloat(checkoutData.grand_total)
-    : subtotal + tax;
-
-  // ── Validation ────────────────────────────────────────────────────────────
+  // Validation 
   const validate = (): CheckoutFormErrors => {
     const errs: CheckoutFormErrors = {};
     if (!form.name.trim()) errs.name = "Nama lengkap wajib diisi";
@@ -97,38 +64,42 @@ export function useCheckout(token: string, initialTable?: string): UseCheckoutRe
     return errs;
   };
 
-  // ── Submit ────────────────────────────────────────────────────────────────
+  // Submit: 2 langkah 
   const handleSubmit = async (): Promise<void> => {
     const errs = validate();
-    if (Object.keys(errs).length) {
-      setFormErrors(errs);
+    if (Object.keys(errs).length) { setFormErrors(errs); return; }
+    if (!token) {
+      setSubmitError("Token sesi tidak ditemukan. Silakan scan ulang QR Code.");
       return;
     }
+
     setFormErrors({});
     setSubmitting(true);
     setSubmitError(null);
 
     try {
-      // TODO: aktifkan saat backend order endpoint siap:
-      // const payload: CheckoutSubmitPayload = {
-      //   customer_name: form.name,
-      //   whatsapp_number: form.whatsapp,
-      //   table_number: form.table,
-      //   notes: form.notes,
-      //   payment_method: paymentMethod,
-      // };
-      // const result = await submitCheckoutOrder(token, payload);
-      // setCompletedOrder({ ...result.data, paymentMethod });
+      // Snapshot cart sebelum di-clear
+      const cartSnapshot = [...cartItems];
 
-      await new Promise<void>((r) => setTimeout(r, 800));
-      if (checkoutData) {
-        setCompletedOrder({ ...checkoutData, paymentMethod });
-      }
+      // 1. POST /api/orders
+      // Ubah CartItem[] jadi format yang dibutuhkan API
+      const orderPayload: PlaceOrderPayload = {
+        orders: cartItems.map((ci) => ({
+          item_id: Number(ci.menuItem.id),
+          amount: ci.quantity,
+        })),
+      };
+      await placeOrder(orderPayload);
+
+      // 2. POST /api/table-sessions/{token}/checkout untuk finalisasi pembayaran
+      // Finalisasi setelah order berhasil dibuat
+      const session = await confirmCheckout(token);
+
+      setCompletedOrder({ session, cartSnapshot, paymentMethod });
+      clearCart();
     } catch (err) {
       setSubmitError(
-        err instanceof Error
-          ? err.message
-          : "Terjadi kesalahan. Silakan coba lagi."
+        err instanceof Error ? err.message : "Terjadi kesalahan. Silakan coba lagi."
       );
     } finally {
       setSubmitting(false);
@@ -136,9 +107,7 @@ export function useCheckout(token: string, initialTable?: string): UseCheckoutRe
   };
 
   return {
-    checkoutData,
-    loading,
-    fetchError,
+    cartItems,
     subtotal,
     tax,
     grandTotal,

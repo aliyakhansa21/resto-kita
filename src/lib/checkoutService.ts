@@ -1,33 +1,25 @@
-// src/lib/checkoutService.ts
-// Menggunakan instance `api` dari @/lib/api (axios + interceptor Bearer token)
-// agar token sesi meja otomatis dikirim di setiap request — sama seperti menuService.ts
-
 import api from "@/lib/api";
-import type { CheckoutSession, CheckoutSubmitPayload } from "@/types";
+import type {
+  PlaceOrderPayload,
+  PlaceOrderResponse,
+  CheckoutSession,
+} from "@/types";
 
-/**
- * Fetch ringkasan pesanan & grand total.
- * POST /api/table-sessions/{token}/checkout
- */
-export async function fetchCheckoutSession(token: string): Promise<CheckoutSession> {
-  const { data } = await api.post<{ data: CheckoutSession }>(
-    `/table-sessions/${token}/checkout`
+// 1. Bikin order dari items di cart (POST /api/orders)
+export async function placeOrder(
+  payload: PlaceOrderPayload
+): Promise<PlaceOrderResponse> {
+  const { data } = await api.post<{ data: PlaceOrderResponse }>(
+    "/orders",
+    payload
   );
   return data.data;
 }
 
-/**
- * Kirim konfirmasi order setelah "Confirm & Pay".
- * TODO: Aktifkan saat backend endpoint tersedia.
- * POST /api/table-sessions/{token}/orders
- */
-export async function submitCheckoutOrder(
-  token: string,
-  payload: CheckoutSubmitPayload
-): Promise<{ data: CheckoutSession }> {
+// 2. Finalisasi pembayaran setelah order dibuat (POST /api/table-sessions/{token}/checkout)
+export async function confirmCheckout(token: string): Promise<CheckoutSession> {
   const { data } = await api.post<{ data: CheckoutSession }>(
-    `/table-sessions/${token}/orders`,
-    payload
+    `/table-sessions/${token}/checkout`
   );
-  return data;
+  return data.data;
 }
