@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { X, ShoppingCart, ShoppingBag, ChevronRight } from "lucide-react";
 import { CartItem } from "./CartItem";
+import { useRouter } from 'next/navigation';
 import { Button } from "@/app/components/ui/Button";
 import { formatCurrency } from "@/lib/utils";
 import type { CartItem as CartItemType } from "@/types";
@@ -23,7 +24,7 @@ interface CartModalProps {
     totalPrice: number;
     onUpdateQty: (id: string, qty: number) => void;
     onRemove: (id: string) => void;
-    onCheckout: () => void; // navigates to /checkout page
+    tableToken?: string; //token sesi meja dari QR/URL
     tableNumber?: string;
 }
 
@@ -36,27 +37,32 @@ export function CartModal({
     totalPrice,
     onUpdateQty,
     onRemove,
-    onCheckout,
-    tableNumber = "07",
-    }: CartModalProps) {
+    tableToken = "abc",
+    tableNumber = "1",
+}: CartModalProps) {
+    const router = useRouter();
+
     const TAX_RATE = 0.1;
     const taxAmount = totalPrice * TAX_RATE;
     const totalWithTax = totalPrice + taxAmount;
 
     useEffect(() => {
         document.body.style.overflow = isOpen ? "hidden" : "";
-        return () => {
-        document.body.style.overflow = "";
-        };
+        return () => {document.body.style.overflow = "";};
     }, [isOpen]);
 
     useEffect(() => {
         const handleKey = (e: KeyboardEvent) => {
-        if (e.key === "Escape" && isOpen) onClose();
+            if (e.key === "Escape" && isOpen) onClose();
         };
         window.addEventListener("keydown", handleKey);
         return () => window.removeEventListener("keydown", handleKey);
     }, [isOpen, onClose]);
+
+    const handleCheckout = () => {
+        onClose();
+        router.push(`/checkout?token=${tableToken}&table=${tableNumber}`);
+    };
 
     if (!isOpen) return null;
 
@@ -140,10 +146,7 @@ export function CartModal({
 
                             {/* Checkout Button */}
                             <button
-                                onClick={() => {
-                                onClose();
-                                onCheckout();
-                                }}
+                                onClick={handleCheckout}
                                 className="w-full mt-1 bg-primary hover:bg-primary-30 active:scale-[0.98] transition-all text-white font-semibold text-sm rounded-xl py-3.5 flex items-center justify-center gap-2"
                             >
                                 <ShoppingBag size={16} />
@@ -155,58 +158,58 @@ export function CartModal({
             </div>
         </>
     );
-    }
-
-    // API helper buat nanti dipakai di halaman checkout
-    export interface SubmitOrderPayload {
-    tableNumber: string;
-    customerName: string;
-    whatsapp: string;
-    notes?: string;
-    paymentMethod: "cash" | "non-cash";
-    items: Array<{ itemId: string | number; amount: number }>;
-    }
-
-    export async function submitOrder(payload: SubmitOrderPayload) {
-    const res = await fetch(`${API_BASE_URL}/api/orders`, {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-        const error = await res.json().catch(() => ({}));
-        throw new Error(error?.message ?? `HTTP ${res.status}`);
-    }
-
-    return res.json();
-    }
-
-    // Ambil daftar orders
-    export async function fetchOrders() {
-    const res = await fetch(`${API_BASE_URL}/api/orders`, {
-        headers: getAuthHeaders(),
-    });
-
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.json() as Promise<{
-        data: Array<{
-            id: string;
-            confirmed: string;
-            order_items: Array<{
-                id: string;
-                order: object;
-                item: {
-                id: number;
-                name: string;
-                description: string;
-                price: string;
-                img: string;
-                is_active: number;
-                category: { id: number; name: string; description: string };
-                };
-                amount: string;
-            }>;
-        }>;
-    }>;
 }
+
+//     // API helper buat nanti dipakai di halaman checkout
+//     export interface SubmitOrderPayload {
+//     tableNumber: string;
+//     customerName: string;
+//     whatsapp: string;
+//     notes?: string;
+//     paymentMethod: "cash" | "non-cash";
+//     items: Array<{ itemId: string | number; amount: number }>;
+//     }
+
+//     export async function submitOrder(payload: SubmitOrderPayload) {
+//     const res = await fetch(`${API_BASE_URL}/api/orders`, {
+//         method: "POST",
+//         headers: getAuthHeaders(),
+//         body: JSON.stringify(payload),
+//     });
+
+//     if (!res.ok) {
+//         const error = await res.json().catch(() => ({}));
+//         throw new Error(error?.message ?? `HTTP ${res.status}`);
+//     }
+
+//     return res.json();
+//     }
+
+//     // Ambil daftar orders
+//     export async function fetchOrders() {
+//     const res = await fetch(`${API_BASE_URL}/api/orders`, {
+//         headers: getAuthHeaders(),
+//     });
+
+//     if (!res.ok) throw new Error(`HTTP ${res.status}`);
+//     return res.json() as Promise<{
+//         data: Array<{
+//             id: string;
+//             confirmed: string;
+//             order_items: Array<{
+//                 id: string;
+//                 order: object;
+//                 item: {
+//                 id: number;
+//                 name: string;
+//                 description: string;
+//                 price: string;
+//                 img: string;
+//                 is_active: number;
+//                 category: { id: number; name: string; description: string };
+//                 };
+//                 amount: string;
+//             }>;
+//         }>;
+//     }>;
+// }
