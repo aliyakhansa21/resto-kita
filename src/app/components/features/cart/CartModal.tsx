@@ -7,13 +7,7 @@ import { useRouter } from 'next/navigation';
 import { formatCurrency } from "@/lib/utils";
 import type { CartItem as CartItemType } from "@/types";
 import { placeOrder } from "@/lib/checkoutService";
-
-// // API Config
-// const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
-// const getAuthHeaders = (): HeadersInit => ({
-//     "Content-Type": "application/json",
-//     Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN ?? "abc"}`,
-// });
+import { useCart } from "@/context/CartContext";
 
 // types
 interface CartModalProps {
@@ -24,7 +18,6 @@ interface CartModalProps {
     totalPrice: number;
     onUpdateQty: (id: string, qty: number) => void;
     onRemove: (id: string) => void;
-    onClearCart: () => void;
     tableToken?: string; //token sesi meja dari QR/URL
     tableNumber?: string;
 }
@@ -38,11 +31,11 @@ export function CartModal({
     totalPrice,
     onUpdateQty,
     onRemove,
-    onClearCart,
     tableToken = "",
     tableNumber = "1",
 }: CartModalProps) {
     const router = useRouter();
+    const { clearCart } = useCart();
     const [placing, setPlacing] = useState(false);
     const [placeError, setPlaceError] = useState<string | null>(null);
 
@@ -52,43 +45,42 @@ export function CartModal({
 
     useEffect(() => {
         document.body.style.overflow = isOpen ? "hidden" : "";
-        return () => {document.body.style.overflow = "";};
+        return () => { document.body.style.overflow = ""; };
     }, [isOpen]);
-
+    
     useEffect(() => {
         const handleKey = (e: KeyboardEvent) => {
-            if (e.key === "Escape" && isOpen) onClose();
+        if (e.key === "Escape" && isOpen) onClose();
         };
         window.addEventListener("keydown", handleKey);
         return () => window.removeEventListener("keydown", handleKey);
     }, [isOpen, onClose]);
-
-    // Place order -> redirect ke /orders
+    
     const handleCheckout = async () => {
         if (!items.length) return;
         setPlacing(true);
         setPlaceError(null);
-
+    
         try {
-            await placeOrder({
-                orders: items.map((ci) => ({
-                    item_id: Number(ci.menuItem.id),
-                    amount: ci.quantity,
-                })),
-            });
-
-            onClearCart();
-            onClose();
-            router.push(`/orders?token=${tableToken}&table=${tableNumber}`);
+        await placeOrder({
+            orders: items.map((ci) => ({
+            item_id: Number(ci.menuItem.id),
+            amount: ci.quantity,
+            })),
+        });
+    
+        clearCart();
+        onClose();
+        router.push(`/orders?token=${tableToken}&table=${tableNumber}`);
         } catch (err) {
-            setPlaceError(
-                err instanceof Error ? err.message : "Gagal membuat pesanan. COba lagi."
-            );
+        setPlaceError(
+            err instanceof Error ? err.message : "Gagal membuat pesanan. Coba lagi."
+        );
         } finally {
-            setPlacing(false);
+        setPlacing(false);
         }
     };
-
+    
     if (!isOpen) return null;
 
     return (
