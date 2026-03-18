@@ -1,7 +1,3 @@
-// src/app/components/features/checkout/OrderDetail.tsx
-// Data items diambil dari session.orders (response POST /checkout)
-// Tidak perlu cartSnapshot lagi karena backend sudah return semua order.
-
 import type { CheckoutSession, PaymentMethod } from "@/types";
 
 interface Props {
@@ -32,7 +28,7 @@ export function OrderDetail({ session, paymentMethod, onBack }: Props) {
   return (
     <div className="bg-white rounded-2xl shadow-md overflow-hidden">
 
-      {/* ── Status Banner ── */}
+      {/* Status Banner */}
       <div className={`flex items-start gap-4 px-6 py-5 ${isCash ? "bg-[#FFFBEB]" : "bg-green-50"}`}>
         <span className="text-4xl mt-0.5">{isCash ? "🧾" : "✅"}</span>
         <div>
@@ -47,7 +43,7 @@ export function OrderDetail({ session, paymentMethod, onBack }: Props) {
         </div>
       </div>
 
-      {/* ── Payment Info ── */}
+      {/* Payment Info */}
       <section className="px-6 py-5 border-t border-secondary-20">
         <h2 className="font-bold text-base text-primary-50 mb-4">
           🧾 Payment Information
@@ -80,10 +76,10 @@ export function OrderDetail({ session, paymentMethod, onBack }: Props) {
         </div>
       </section>
 
-      {/* ── Items — dari session.orders ── */}
+      {/* Items — dari session.orders */}
       <section className="px-6 py-5 border-t border-secondary-20">
         <h2 className="font-bold text-base text-primary-50 mb-4">Items</h2>
-        <div className="flex flex-col divide-y divide-secondary-20">
+        <div className="flex flex-col">
           {allItems.map((oi) => (
             <div key={oi.id} className="flex items-center gap-4 py-3">
               <img
@@ -95,14 +91,14 @@ export function OrderDetail({ session, paymentMethod, onBack }: Props) {
                 className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
               />
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-base text-primary-50 truncate">
+                <p className="font-bold text-base text-[#0F172A] truncate">
                   {oi.item.name}
                 </p>
-                <p className="text-text-xs text-secondary-40 mt-0.5">
+                <p className="text-text-xs text-[#64748B] mt-0.5">
                   {oi.amount}x {fmt(oi.item.price)}
                 </p>
               </div>
-              <p className="font-bold text-base text-primary-50 flex-shrink-0">
+              <p className="font-bold text-base text-[#0F172A] flex-shrink-0">
                 {fmt(parseFloat(oi.item.price) * oi.amount)}
               </p>
             </div>
@@ -110,16 +106,16 @@ export function OrderDetail({ session, paymentMethod, onBack }: Props) {
         </div>
 
         {/* Totals */}
-        <div className="border-t border-secondary-20 pt-4 mt-3 flex flex-col gap-2">
-          <div className="flex justify-between text-base text-secondary-50">
+        <div className="border-t border-primary/5 pt-4 mt-3 flex flex-col gap-2">
+          <div className="flex justify-between text-base text-[#64748B]">
             <span>Subtotal</span><span>{fmt(subtotal)}</span>
           </div>
-          <div className="flex justify-between text-base text-secondary-50">
+          <div className="flex justify-between text-base text-[#64748B]">
             <span>Tax (10%)</span><span>{fmt(tax)}</span>
           </div>
-          <div className="flex justify-between font-black text-h4 text-primary-50 border-t border-secondary-20 pt-3 mt-1">
+          <div className="flex justify-between font-black text-h4 text-[#0F172A] pt-3 mt-1">
             <span>Total Amount</span>
-            <span className="text-primary">{fmt(total)}</span>
+            <span className="text-[#0F172A]">{fmt(total)}</span>
           </div>
         </div>
       </section>
