@@ -2,6 +2,7 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useCheckout } from "@/hooks/useCheckout";
+import { useOrders } from "@/hooks/useOrders";
 import { CheckoutForm } from "@/app/components/features/checkout/CheckoutForm";
 import { CheckoutSummary } from "@/app/components/features/checkout/CheckoutSummary";
 import { PaymentSelector} from "@/app/components/features/checkout/PaymentSelector";
@@ -9,7 +10,8 @@ import { OrderDetail } from "@/app/components/features/checkout/OrderDetail";
 import { Footer } from "@/app/components/shared/Footer";
 import { Navbar } from "@/app/components/shared/Navbar";
 
-const fmt = (val: number): string => "Rp" + val.toLocaleString("id-ID").replace(/,/g, ".");
+const fmt = (val: number): string =>
+  "Rp" + val.toLocaleString("id-ID").replace(/,/g, ".");
 
 export default function CheckoutPage() {
   const searchParams = useSearchParams();
@@ -18,11 +20,12 @@ export default function CheckoutPage() {
   const token = searchParams.get("token") ?? "";
   const tableNumber = searchParams.get("table") ?? "07";
 
+  // Order summary dari API (sudah di-place sebelumnya)
+  const { orders, loading: ordersLoading, grandTotal } = useOrders();
+  const tax = grandTotal * 0.1;
+  const totalWithTax = grandTotal + tax;
+
   const {
-    cartItems,
-    subtotal,
-    tax,
-    grandTotal,
     form,
     setForm,
     formErrors,
@@ -35,29 +38,7 @@ export default function CheckoutPage() {
     reset,
   } = useCheckout(token, tableNumber);
 
-  // Cart kosong & belum ada completed order → redirect 
-  if (cartItems.length === 0 && !completedOrder) {
-    return (
-      <div className="min-h-screen flex flex-col bg-secondary-DEFAULT/20">
-        <Navbar tableNumber={tableNumber} />
-        <main className="flex-1 flex flex-col items-center justify-center gap-4 text-center px-6">
-          <span className="text-5xl">🛒</span>
-          <p className="font-bold text-base text-primary-50">
-            Keranjang kamu kosong
-          </p>
-          <button
-            onClick={() => router.push("/menu")}
-            className="bg-primary text-white font-bold text-base rounded-xl px-6 py-3 hover:bg-primary-10 transition-colors"
-          >
-            Kembali ke Menu
-          </button>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  // Order Detail — tampil setelah Confirm & Pay berhasil 
+  // ── Order Detail (setelah confirm berhasil) ───────────────────────────────
   if (completedOrder) {
     return (
       <div className="min-h-screen flex flex-col bg-secondary-DEFAULT/20">
@@ -67,10 +48,8 @@ export default function CheckoutPage() {
           <p className="text-base text-secondary-50 mb-8">
             Your order has been successfully created
           </p>
-          {/* Pass cartSnapshot agar items tetap tampil meski cart sudah di-clear */}
           <OrderDetail
             session={completedOrder.session}
-            cartSnapshot={completedOrder.cartSnapshot}
             paymentMethod={completedOrder.paymentMethod}
             onBack={() => {
               reset();
@@ -83,28 +62,67 @@ export default function CheckoutPage() {
     );
   }
 
-  // Checkout Form 
   return (
     <div className="min-h-screen flex flex-col bg-secondary-DEFAULT/20">
       <Navbar tableNumber={tableNumber} />
-      <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-24">
+
+      <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-10">
         <h1 className="text-h2 text-primary-50 mb-1">Checkout</h1>
         <p className="text-base text-secondary-50 mb-8">
           Please review your order and complete your details.
         </p>
+
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-7 items-start">
-          {/* Left */}
+
+          {/* ── Left ── */}
           <div className="flex flex-col gap-6">
             <CheckoutForm form={form} setForm={setForm} errors={formErrors} />
+
+            {/* Order Summary dari API */}
             <section className="bg-white rounded-2xl shadow-sm border border-secondary-20 p-7">
               <h2 className="font-bold text-base text-primary-50 mb-5">
                 🧾 Order Summary
               </h2>
-              <CheckoutSummary items={cartItems} />
+              {ordersLoading ? (
+                <p className="text-base text-secondary-50 animate-pulse text-center py-6">
+                  Memuat pesanan...
+                </p>
+              ) : (
+                <div className="flex flex-col gap-5">
+                  {orders.flatMap((o) => o.order_items).map((oi) => (
+                    <div key={oi.id} className="flex items-center gap-4">
+                      <img
+                        src={
+                          oi.item.img ||
+                          `https://placehold.co/64x64/8b5e3c/ead7c5?text=${oi.item.name[0]}`
+                        }
+                        alt={oi.item.name}
+                        className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-base text-primary-50 truncate">
+                          {oi.item.name}
+                        </p>
+                        <p className="text-text-xs text-secondary-50 mt-0.5">
+                          {oi.item.description}
+                        </p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="font-bold text-base text-primary">
+                          {fmt(parseFloat(oi.item.price))}
+                        </p>
+                        <p className="text-text-xs text-secondary-40">
+                          Qty: {oi.amount}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
           </div>
 
-          {/* Right */}
+          {/* ── Right ── */}
           <div className="lg:sticky lg:top-24">
             <section className="bg-white rounded-2xl shadow-sm border border-secondary-20 p-7">
               <h2 className="font-bold text-base text-primary-50 mb-5">
@@ -114,14 +132,16 @@ export default function CheckoutPage() {
 
               <div className="flex flex-col gap-2 border-t border-secondary-20 pt-4">
                 <div className="flex justify-between text-base text-secondary-50">
-                  <span>Subtotal</span><span>{fmt(subtotal)}</span>
+                  <span>Subtotal</span>
+                  <span>{fmt(grandTotal)}</span>
                 </div>
                 <div className="flex justify-between text-base text-secondary-50">
-                  <span>Tax Charge (10%)</span><span>{fmt(tax)}</span>
+                  <span>Tax Charge (10%)</span>
+                  <span>{fmt(tax)}</span>
                 </div>
                 <div className="flex justify-between font-black text-h4 text-primary-50 border-t border-secondary-20 pt-3 mt-1">
                   <span>Total</span>
-                  <span className="text-primary">{fmt(grandTotal)}</span>
+                  <span className="text-primary">{fmt(totalWithTax)}</span>
                 </div>
               </div>
 
@@ -133,7 +153,7 @@ export default function CheckoutPage() {
 
               <button
                 onClick={handleSubmit}
-                disabled={submitting}
+                disabled={submitting || ordersLoading}
                 className="mt-5 w-full bg-primary text-white font-bold text-base rounded-xl py-4 hover:bg-primary-10 active:bg-primary-20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {submitting ? (
