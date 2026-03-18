@@ -1,19 +1,19 @@
 "use client";
 
-import { useEffect } from "react";
-import { X, ShoppingCart, ShoppingBag, ChevronRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { X, ShoppingCart, ShoppingBag, Banknote, ChevronRight, Loader2 } from "lucide-react";
 import { CartItem } from "./CartItem";
 import { useRouter } from 'next/navigation';
-import { Button } from "@/app/components/ui/Button";
 import { formatCurrency } from "@/lib/utils";
 import type { CartItem as CartItemType } from "@/types";
+import { placeOrder } from "@/lib/checkoutService";
 
-// API Config
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
-const getAuthHeaders = (): HeadersInit => ({
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN ?? "abc"}`,
-});
+// // API Config
+// const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+// const getAuthHeaders = (): HeadersInit => ({
+//     "Content-Type": "application/json",
+//     Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN ?? "abc"}`,
+// });
 
 // types
 interface CartModalProps {
@@ -24,6 +24,7 @@ interface CartModalProps {
     totalPrice: number;
     onUpdateQty: (id: string, qty: number) => void;
     onRemove: (id: string) => void;
+    onClearCart: () => void;
     tableToken?: string; //token sesi meja dari QR/URL
     tableNumber?: string;
 }
@@ -37,10 +38,13 @@ export function CartModal({
     totalPrice,
     onUpdateQty,
     onRemove,
-    tableToken = "abc",
+    onClearCart,
+    tableToken = "",
     tableNumber = "1",
 }: CartModalProps) {
     const router = useRouter();
+    const [placing, setPlacing] = useState(false);
+    const [placeError, setPlaceError] = useState<string | null>(null);
 
     const TAX_RATE = 0.1;
     const taxAmount = totalPrice * TAX_RATE;
@@ -59,9 +63,30 @@ export function CartModal({
         return () => window.removeEventListener("keydown", handleKey);
     }, [isOpen, onClose]);
 
-    const handleCheckout = () => {
-        onClose();
-        router.push(`/checkout?token=${tableToken}&table=${tableNumber}`);
+    // Place order -> redirect ke /orders
+    const handleCheckout = async () => {
+        if (!items.length) return;
+        setPlacing(true);
+        setPlaceError(null);
+
+        try {
+            await placeOrder({
+                orders: items.map((ci) => ({
+                    item_id: Number(ci.menuItem.id),
+                    amount: ci.quantity,
+                })),
+            });
+
+            onClearCart();
+            onClose();
+            router.push(`/orders?token=${tableToken}&table=${tableNumber}`);
+        } catch (err) {
+            setPlaceError(
+                err instanceof Error ? err.message : "Gagal membuat pesanan. COba lagi."
+            );
+        } finally {
+            setPlacing(false);
+        }
     };
 
     if (!isOpen) return null;
@@ -140,17 +165,31 @@ export function CartModal({
                             <div className="flex items-center justify-between pt-1">
                                 <span className="font-bold text-stone-800 text-sm">Total Amount</span>
                                 <span className="font-black text-primary text-lg">
-                                {formatCurrency(totalWithTax)}
+                                    {formatCurrency(totalWithTax)}
                                 </span>
                             </div>
+
+                            {placeError && (
+                                <p className="text-xs text-red-500 text-center">{placeError}</p>
+                            )}
 
                             {/* Checkout Button */}
                             <button
                                 onClick={handleCheckout}
-                                className="w-full mt-1 bg-primary hover:bg-primary-30 active:scale-[0.98] transition-all text-white font-semibold text-sm rounded-xl py-3.5 flex items-center justify-center gap-2"
+                                disabled={placing}
+                                className="w-full mt-1 bg-primary hover:bg-primary-30 active:scale-[0.98] transition-all text-white font-semibold text-sm rounded-xl py-3.5 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                             >
-                                <ShoppingBag size={16} />
-                                Checkout Now
+                                {placing ? (
+                                    <>
+                                        <Loader2 size={16} className="animate-spin"/>
+                                        Memproses...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Banknote size={16}/>
+                                        Order Now
+                                    </>
+                                )}                                
                             </button>
                         </div>
                     )}

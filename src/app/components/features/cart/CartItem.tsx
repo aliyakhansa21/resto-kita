@@ -39,24 +39,28 @@ export function CartItem({ item, onUpdateQty, onRemove }: CartItemProps) {
                 <p className="text-xs text-stone-500 mt-0.5">
                 {formatCurrency(menuItem.price)}
                 </p>
-            </div>
+            </div>            
 
             {/* Qty controls */}
-            <div className="flex items-center gap-1.5 flex-shrink-0">
+            <div className="flex items-center justify-between w-24 px-3 py-1.5 rounded-full border-2 border-stone-200 bg-white flex-shrink-0">
                 <button
-                onClick={() => onUpdateQty(menuItem.id, quantity - 1)}
-                className="w-6 h-6 rounded-full border border-stone-300 flex items-center justify-center hover:bg-stone-100 transition-colors"
-                aria-label="Kurangi jumlah"
+                    onClick={() => onUpdateQty(menuItem.id, quantity - 1)}
+                    className="text-stone-700 hover:text-stone-900 flex items-center justify-center transition-colors"
+                    aria-label="Kurangi jumlah"
                 >
-                    <Minus size={12} />
+                    <Minus size={16} strokeWidth={2.5} />
                 </button>
-                <span className="text-sm font-bold w-5 text-center">{quantity}</span>
+                
+                <span className="text-base font-bold text-stone-800 w-6 text-center select-none">
+                    {quantity}
+                </span>
+                
                 <button
                     onClick={() => onUpdateQty(menuItem.id, quantity + 1)}
-                    className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary-30 transition-colors"
+                    className="text-stone-700 hover:text-stone-900 flex items-center justify-center transition-colors"
                     aria-label="Tambah jumlah"
                 >
-                    <Plus size={12} />
+                    <Plus size={16} strokeWidth={2.5} />
                 </button>
             </div>
 
