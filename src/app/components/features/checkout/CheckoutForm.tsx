@@ -13,7 +13,7 @@ export function CheckoutForm({ form, setForm, errors }: Props) {
         ${hasErr ? "border-red-400 bg-red-50" : "border-secondary"}`;
 
     return (
-        <section className="bg-white rounded-2xl shadow-sm p-7">
+        <section className="bg-white rounded-2xl shadow-md p-7">
             <h2 className="font-bold text-base text-primary-50 mb-5">Customer Details</h2>
 
             <div className="flex flex-wrap gap-4 mb-4">

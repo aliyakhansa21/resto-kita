@@ -66,7 +66,7 @@ export default function CheckoutPage() {
     <div className="min-h-screen flex flex-col bg-secondary-DEFAULT/20">
       <Navbar tableNumber={tableNumber} />
 
-      <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-10">
+      <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-24">
         <h1 className="text-h2 text-primary-50 mb-1">Checkout</h1>
         <p className="text-base text-secondary-50 mb-8">
           Please review your order and complete your details.
@@ -74,12 +74,12 @@ export default function CheckoutPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-7 items-start">
 
-          {/* ── Left ── */}
+          {/* Left */}
           <div className="flex flex-col gap-6">
             <CheckoutForm form={form} setForm={setForm} errors={formErrors} />
 
             {/* Order Summary dari API */}
-            <section className="bg-white rounded-2xl shadow-sm border border-secondary-20 p-7">
+            <section className="bg-white rounded-2xl shadow-md p-7">
               <h2 className="font-bold text-base text-primary-50 mb-5">
                 🧾 Order Summary
               </h2>
@@ -122,9 +122,9 @@ export default function CheckoutPage() {
             </section>
           </div>
 
-          {/* ── Right ── */}
+          {/* Right */}
           <div className="lg:sticky lg:top-24">
-            <section className="bg-white rounded-2xl shadow-sm border border-secondary-20 p-7">
+            <section className="bg-white rounded-2xl shadow-md p-7">
               <h2 className="font-bold text-base text-primary-50 mb-5">
                 💳 Payment Method
               </h2>
@@ -154,7 +154,7 @@ export default function CheckoutPage() {
               <button
                 onClick={handleSubmit}
                 disabled={submitting || ordersLoading}
-                className="mt-5 w-full bg-primary text-white font-bold text-base rounded-xl py-4 hover:bg-primary-10 active:bg-primary-20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                className="mt-5 w-full bg-primary text-white font-bold text-base rounded-full py-4 hover:bg-primary-10 active:bg-primary-20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {submitting ? (
                   <span className="flex items-center justify-center gap-2">

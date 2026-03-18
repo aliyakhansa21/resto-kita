@@ -27,10 +27,10 @@ export function PaymentSelector({ selected, onChange }: Props) {
                 return (
                 <label
                     key={opt.id}
-                    className={`flex items-center justify-between rounded-xl px-4 py-3 cursor-pointer border transition-all
+                    className={`flex items-center justify-between rounded-full px-4 py-3 cursor-pointer border transition-all
                     ${
                         active
-                        ? "border-primary border-2"
+                        ? "bg-primary/5 border-primary border-2"
                         : "border-secondary hover:border-primary border-2"
                     }`}
                 >
