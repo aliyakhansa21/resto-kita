@@ -1,18 +1,23 @@
 import api from "@/lib/api";
 import type {
+  CheckoutOrder,
   PlaceOrderPayload,
-  PlaceOrderResponse,
   CheckoutSession,
 } from "@/types";
 
-// 1. Bikin order dari items di cart (POST /api/orders)
+
+// Ambil semua order aktif lalu pakai di order list page (GET /api/orders)
+export async function fetchOrders(): Promise<CheckoutOrder[]> {
+  const { data } = await api.get<{ data: CheckoutOrder[] }>("orders");
+  return data.data;
+}
+
+
+// Bikin order dari items di cart (POST /api/orders)
 export async function placeOrder(
   payload: PlaceOrderPayload
-): Promise<PlaceOrderResponse> {
-  const { data } = await api.post<{ data: PlaceOrderResponse }>(
-    "/orders",
-    payload
-  );
+): Promise<CheckoutOrder> {
+  const { data } = await api.post<{ data: CheckoutOrder }>("/orders", payload);
   return data.data;
 }
 
