@@ -1,26 +1,19 @@
 import { useState } from "react";
-import { useCart } from "@/context/CartContext";
-import { placeOrder, confirmCheckout } from "@/lib/checkoutService";
+import { confirmCheckout } from "@/lib/checkoutService";
 import type {
   CheckoutSession,
+  CheckoutOrder,
   CheckoutForm,
   CheckoutFormErrors,
   PaymentMethod,
-  CartItem,
-  PlaceOrderPayload,
 } from "@/types";
 
 export interface CompletedOrder {
   session: CheckoutSession;
-  cartSnapshot: CartItem[];
   paymentMethod: PaymentMethod;
 }
 
 interface UseCheckoutReturn {
-  cartItems: CartItem[];
-  subtotal: number;
-  tax: number;
-  grandTotal: number;
   form: CheckoutForm;
   setForm: React.Dispatch<React.SetStateAction<CheckoutForm>>;
   formErrors: CheckoutFormErrors;
@@ -34,12 +27,6 @@ interface UseCheckoutReturn {
 }
 
 export function useCheckout(token: string, initialTable?: string): UseCheckoutReturn {
-  const { items: cartItems, totalPrice, clearCart } = useCart();
-
-  const subtotal = totalPrice;
-  const tax = subtotal * 0.1;
-  const grandTotal = subtotal + tax;
-
   const [form, setForm] = useState<CheckoutForm>({
     name: "",
     whatsapp: "",
@@ -52,7 +39,6 @@ export function useCheckout(token: string, initialTable?: string): UseCheckoutRe
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [completedOrder, setCompletedOrder] = useState<CompletedOrder | null>(null);
 
-  // Validation 
   const validate = (): CheckoutFormErrors => {
     const errs: CheckoutFormErrors = {};
     if (!form.name.trim()) errs.name = "Nama lengkap wajib diisi";
@@ -64,7 +50,7 @@ export function useCheckout(token: string, initialTable?: string): UseCheckoutRe
     return errs;
   };
 
-  // Submit: 2 langkah 
+  // POST /checkout — finalisasi pembayaran
   const handleSubmit = async (): Promise<void> => {
     const errs = validate();
     if (Object.keys(errs).length) { setFormErrors(errs); return; }
@@ -72,31 +58,13 @@ export function useCheckout(token: string, initialTable?: string): UseCheckoutRe
       setSubmitError("Token sesi tidak ditemukan. Silakan scan ulang QR Code.");
       return;
     }
-
     setFormErrors({});
     setSubmitting(true);
     setSubmitError(null);
 
     try {
-      // Snapshot cart sebelum di-clear
-      const cartSnapshot = [...cartItems];
-
-      // 1. POST /api/orders
-      // Ubah CartItem[] jadi format yang dibutuhkan API
-      const orderPayload: PlaceOrderPayload = {
-        orders: cartItems.map((ci) => ({
-          item_id: Number(ci.menuItem.id),
-          amount: ci.quantity,
-        })),
-      };
-      await placeOrder(orderPayload);
-
-      // 2. POST /api/table-sessions/{token}/checkout untuk finalisasi pembayaran
-      // Finalisasi setelah order berhasil dibuat
       const session = await confirmCheckout(token);
-
-      setCompletedOrder({ session, cartSnapshot, paymentMethod });
-      clearCart();
+      setCompletedOrder({ session, paymentMethod });
     } catch (err) {
       setSubmitError(
         err instanceof Error ? err.message : "Terjadi kesalahan. Silakan coba lagi."
@@ -107,10 +75,6 @@ export function useCheckout(token: string, initialTable?: string): UseCheckoutRe
   };
 
   return {
-    cartItems,
-    subtotal,
-    tax,
-    grandTotal,
     form,
     setForm,
     formErrors,
