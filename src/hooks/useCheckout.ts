@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { confirmCheckout } from "@/lib/checkoutService";
+import { usePayment } from "./usePayment";
 import type {
   CheckoutSession,
   CheckoutOrder,
@@ -11,6 +12,7 @@ import type {
 export interface CompletedOrder {
   session: CheckoutSession;
   paymentMethod: PaymentMethod;
+  invoiceId: number;
 }
 
 interface UseCheckoutReturn {
@@ -24,6 +26,7 @@ interface UseCheckoutReturn {
   completedOrder: CompletedOrder | null;
   handleSubmit: () => Promise<void>;
   reset: () => void;
+  payment: ReturnType<typeof usePayment>;
 }
 
 export function useCheckout(token: string, initialTable?: string): UseCheckoutReturn {
@@ -38,6 +41,8 @@ export function useCheckout(token: string, initialTable?: string): UseCheckoutRe
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [completedOrder, setCompletedOrder] = useState<CompletedOrder | null>(null);
+
+  const payment = usePayment();
 
   const validate = (): CheckoutFormErrors => {
     const errs: CheckoutFormErrors = {};
@@ -64,7 +69,15 @@ export function useCheckout(token: string, initialTable?: string): UseCheckoutRe
 
     try {
       const session = await confirmCheckout(token);
-      setCompletedOrder({ session, paymentMethod });
+      const invoiceId = session.id;
+
+      const completed: CompletedOrder = { session, paymentMethod, invoiceId };
+      setCompletedOrder(completed);
+
+      if (paymentMethod === "non_cash") {
+        await payment.startPayment(invoiceId, form.name);
+      }
+      // setCompletedOrder({ session, paymentMethod });
     } catch (err) {
       setSubmitError(
         err instanceof Error ? err.message : "Terjadi kesalahan. Silakan coba lagi."
@@ -84,6 +97,10 @@ export function useCheckout(token: string, initialTable?: string): UseCheckoutRe
     submitError,
     completedOrder,
     handleSubmit,
-    reset: () => setCompletedOrder(null),
+    reset: () => {
+      setCompletedOrder(null);
+      payment.reset();
+    },
+    payment,
   };
 }

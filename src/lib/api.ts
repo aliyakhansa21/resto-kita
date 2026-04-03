@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000/api",
+    baseURL: process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://resto-kita-production.up.railway.app/api",
     headers: {
         "Content-Type": "application/json",
     },
@@ -10,7 +10,23 @@ const api = axios.create({
 
 // Request interceptor — attach Bearer token ke setiap request
 api.interceptors.request.use((config) => {
-    const token = process.env.NEXT_PUBLIC_API_TOKEN ?? "abc";
+    let token = process.env.NEXT_PUBLIC_API_TOKEN ?? "abc";
+
+    if (typeof window !== "undefined") {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tokenFromUrl = urlParams.get("token");
+        
+        const tokenFromStorage = localStorage.getItem("tableToken");
+
+        if (tokenFromUrl) {
+            token = tokenFromUrl;
+            localStorage.setItem("tableToken", tokenFromUrl); 
+        } else if (tokenFromStorage) {
+            token = tokenFromStorage;
+        }
+    }
+
+    // Pasang token ke header
     config.headers.Authorization = `Bearer ${token}`;
     return config;
 });

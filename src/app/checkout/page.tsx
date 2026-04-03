@@ -4,11 +4,11 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useCheckout } from "@/hooks/useCheckout";
 import { useOrders } from "@/hooks/useOrders";
 import { CheckoutForm } from "@/app/components/features/checkout/CheckoutForm";
-import { CheckoutSummary } from "@/app/components/features/checkout/CheckoutSummary";
-import { PaymentSelector} from "@/app/components/features/checkout/PaymentSelector";
+import { PaymentSelector } from "@/app/components/features/checkout/PaymentSelector";
+import PaymentStatusUI from "@/app/components/features/checkout/PaymentStatus";
 import { OrderDetail } from "@/app/components/features/checkout/OrderDetail";
-import { Footer } from "@/app/components/shared/Footer";
 import { Navbar } from "@/app/components/shared/Navbar";
+import { Footer } from "@/app/components/shared/Footer";
 
 const fmt = (val: number): string =>
   "Rp" + val.toLocaleString("id-ID").replace(/,/g, ".");
@@ -20,7 +20,7 @@ export default function CheckoutPage() {
   const token = searchParams.get("token") ?? "";
   const tableNumber = searchParams.get("table") ?? "07";
 
-  // Order summary dari API (sudah di-place sebelumnya)
+  // Order summary dari API (sudah di-place sebelumnya di CartModal)
   const { orders, loading: ordersLoading, grandTotal } = useOrders();
   const tax = grandTotal * 0.1;
   const totalWithTax = grandTotal + tax;
@@ -36,14 +36,56 @@ export default function CheckoutPage() {
     completedOrder,
     handleSubmit,
     reset,
+    payment,
   } = useCheckout(token, tableNumber);
 
-  // ── Order Detail (setelah confirm berhasil) ───────────────────────────────
-  if (completedOrder) {
+  //  Non-Cash: sedang proses Midtrans 
+  // Tampil saat: creating snap token, waiting (popup terbuka), polling status
+  const isNonCashProcessing =
+    completedOrder?.paymentMethod === "non_cash" &&
+    payment.paymentState !== "idle" &&
+    payment.paymentState !== "paid";
+
+  if (isNonCashProcessing) {
     return (
       <div className="min-h-screen flex flex-col bg-secondary-DEFAULT/20">
         <Navbar tableNumber={tableNumber} />
-        <main className="flex-1 max-w-2xl mx-auto w-full px-6 py-24">
+        <main className="flex-1 max-w-2xl mx-auto w-full px-6 py-10">
+          <h1 className="text-h2 text-primary-50 mb-1">Pembayaran</h1>
+          <p className="text-base text-secondary-50 mb-8">
+            Selesaikan pembayaran kamu
+          </p>
+          <div className="bg-white rounded-2xl shadow-md border border-secondary-20 p-8">
+            <PaymentStatusUI
+              state={payment.paymentState}
+              status={payment.paymentStatus}
+              errorMessage={payment.errorMessage}
+              onRetry={() => {
+                if (completedOrder) {
+                  payment.startPayment(completedOrder.invoiceId, form.name);
+                }
+              }}
+              onBack={reset}
+            />
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  //  Order Detail 
+  // Tampil saat:
+  // - Cash: langsung setelah confirm (completedOrder ada, paymentMethod = cash)
+  // - Non-Cash: setelah polling konfirmasi "paid"
+  if (
+    completedOrder &&
+    (completedOrder.paymentMethod === "cash" || payment.paymentState === "paid")
+  ) {
+    return (
+      <div className="min-h-screen flex flex-col bg-secondary-DEFAULT/20">
+        <Navbar tableNumber={tableNumber} />
+        <main className="flex-1 max-w-2xl mx-auto w-full px-6 py-10">
           <h1 className="text-h2 text-primary-50 mb-1">Order Details</h1>
           <p className="text-base text-secondary-50 mb-8">
             Your order has been successfully created
@@ -62,11 +104,12 @@ export default function CheckoutPage() {
     );
   }
 
+  // Checkout Form 
   return (
     <div className="min-h-screen flex flex-col bg-secondary-DEFAULT/20">
       <Navbar tableNumber={tableNumber} />
 
-      <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-24">
+      <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-10">
         <h1 className="text-h2 text-primary-50 mb-1">Checkout</h1>
         <p className="text-base text-secondary-50 mb-8">
           Please review your order and complete your details.
@@ -74,19 +117,20 @@ export default function CheckoutPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-7 items-start">
 
-          {/* Left */}
+          {/* ── Left ── */}
           <div className="flex flex-col gap-6">
             <CheckoutForm form={form} setForm={setForm} errors={formErrors} />
 
-            {/* Order Summary dari API */}
-            <section className="bg-white rounded-2xl shadow-md p-7">
+            {/* Order Summary */}
+            <section className="bg-white rounded-2xl shadow-sm border border-secondary-20 p-7">
               <h2 className="font-bold text-base text-primary-50 mb-5">
                 🧾 Order Summary
               </h2>
               {ordersLoading ? (
-                <p className="text-base text-secondary-50 animate-pulse text-center py-6">
-                  Memuat pesanan...
-                </p>
+                <div className="flex items-center justify-center py-8 gap-3">
+                  <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  <p className="text-base text-secondary-50">Memuat pesanan...</p>
+                </div>
               ) : (
                 <div className="flex flex-col gap-5">
                   {orders.flatMap((o) => o.order_items).map((oi) => (
@@ -122,14 +166,16 @@ export default function CheckoutPage() {
             </section>
           </div>
 
-          {/* Right */}
+          {/* Right: Payment */}
           <div className="lg:sticky lg:top-24">
-            <section className="bg-white rounded-2xl shadow-md p-7">
+            <section className="bg-white rounded-2xl shadow-sm border border-secondary-20 p-7">
               <h2 className="font-bold text-base text-primary-50 mb-5">
                 💳 Payment Method
               </h2>
+
               <PaymentSelector selected={paymentMethod} onChange={setPaymentMethod} />
 
+              {/* Totals */}
               <div className="flex flex-col gap-2 border-t border-secondary-20 pt-4">
                 <div className="flex justify-between text-base text-secondary-50">
                   <span>Subtotal</span>
@@ -145,6 +191,14 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
+              {/* Info Non-Cash */}
+              {paymentMethod === "non_cash" && (
+                <div className="mt-4 bg-secondary-DEFAULT/20 rounded-xl px-4 py-3 text-text-xs text-secondary-50 leading-relaxed">
+                  💡 Kamu akan diarahkan ke halaman pembayaran Midtrans.
+                  Tersedia QRIS, GoPay, OVO, Dana, transfer bank, dan kartu kredit.
+                </div>
+              )}
+
               {submitError && (
                 <p className="mt-3 text-text-xs text-red-500 text-center">
                   {submitError}
@@ -154,12 +208,14 @@ export default function CheckoutPage() {
               <button
                 onClick={handleSubmit}
                 disabled={submitting || ordersLoading}
-                className="mt-5 w-full bg-primary text-white font-bold text-base rounded-full py-4 hover:bg-primary-10 active:bg-primary-20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                className="mt-5 w-full bg-primary text-white font-bold text-base rounded-xl py-4 hover:bg-primary-10 active:bg-primary-20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {submitting ? (
                   <span className="flex items-center justify-center gap-2">
                     <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Memproses...
+                    {paymentMethod === "non_cash"
+                      ? "Menyiapkan pembayaran..."
+                      : "Memproses..."}
                   </span>
                 ) : (
                   "Confirm & Pay →"

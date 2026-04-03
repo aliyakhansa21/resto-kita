@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDown, Utensils, ShoppingBag } from "lucide-react";
 import { Navbar }          from "@/app/components/shared/Navbar";
 import { Footer }          from "@/app/components/shared/Footer";
@@ -15,12 +16,16 @@ import { useCart }         from "@/context/CartContext";
 import type { MenuItem }   from "@/types";
 
 const TABLE_NUMBER = "1";
-const TABLE_TOKEN = "abc";
 
 export default function MenuPage() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const urlToken = searchParams.get("token");
+
     const [categoryId, setCategoryId] = useState("all");
     const [search,     setSearch]     = useState("");
     const [isCartOpen, setIsCartOpen] = useState(false);
+    const [tableToken, setTableToken] = useState("");
 
     // Data fetching + client-side filter
     const { menuItems, categories, isLoading, isError, error } = useMenu({
@@ -37,13 +42,39 @@ export default function MenuPage() {
         totalPrice,
     } = useCart();
 
+    useEffect(() => {
+        const fetchDevToken = async () => {        
+            if (!urlToken) {
+                try {
+                    const response = await fetch("https://resto-kita-production.up.railway.app/api/sementara", {
+                        method: "GET",
+                        headers: { "Accept": "application/json" },
+                        cache: "no-store",
+                    });
+                    
+                    const json = await response.json();
+                    if (json?.data?.token) {
+                        const devToken = json.data.token;
+                        setTableToken(devToken);
+                        console.log("Dev Token berhasil didapat:", devToken);                                            
+                        router.replace(`/menu?token=${devToken}`);
+                    }
+                } catch (err) {
+                    console.error("Gagal fetch token sementara:", err);
+                }
+            } else {
+                setTableToken(urlToken);
+            }
+        };
+
+        fetchDevToken();
+    }, [urlToken, router]);
+
     const handleSearch = useCallback((val: string) => setSearch(val), []);
 
-    // Submit order: send cartItems to backend, then clear
+    // Submit order
     const handleSubmitOrder = useCallback(async () => {
         try {
-            // TODO: integrate with your backend API here
-            // e.g. await fetch('/api/orders', { method: 'POST', body: JSON.stringify({ tableNumber: TABLE_NUMBER, items: cartItems }) })
             console.log("Order submitted:", { tableNumber: TABLE_NUMBER, cartItems });
             setIsCartOpen(false);
         } catch (err) {
@@ -179,7 +210,7 @@ export default function MenuPage() {
             totalPrice={totalPrice}
             onUpdateQty={updateQty}
             onRemove={removeItem}
-            tableToken={TABLE_TOKEN}
+            tableToken={tableToken}
             // onSubmitOrder={handleSubmitOrder}
             // isSubmitting={false}
             tableNumber={TABLE_NUMBER}
