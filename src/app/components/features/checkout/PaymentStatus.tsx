@@ -33,7 +33,6 @@ export default function PaymentStatusUI({
 
     // Sukses (paid) 
     if (state === "paid") {
-        // Format waktu pembayaran ke lokal (WIB)
         const paidAt = status?.paid_at
         ? new Date(status.paid_at).toLocaleString("id-ID", {
             timeZone: "Asia/Jakarta",
@@ -43,7 +42,7 @@ export default function PaymentStatusUI({
         : null;
 
         return (
-        <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+        <div className="flex flex-col items-center justify-center gap-3 py-24 text-center">
             <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center text-4xl">
             ✅
             </div>

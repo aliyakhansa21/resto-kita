@@ -7,9 +7,11 @@ import { useCart } from "@/context/CartContext";
 
 export interface NavbarProps {
     tableNumber?: string;
+    onCartClick: () => void;
+    cartCount: number;
 }
 
-export function Navbar({ tableNumber = "07" }: NavbarProps) {
+export function Navbar({ tableNumber, onCartClick, cartCount }: NavbarProps) {
     const { totalItems } = useCart();
     const router = useRouter();
     const searchParams = useSearchParams();

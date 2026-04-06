@@ -49,8 +49,8 @@ export default function CheckoutPage() {
   if (isNonCashProcessing) {
     return (
       <div className="min-h-screen flex flex-col bg-secondary-DEFAULT/20">
-        <Navbar tableNumber={tableNumber} />
-        <main className="flex-1 max-w-2xl mx-auto w-full px-6 py-10">
+        <Navbar tableNumber={tableNumber} onCartClick={() => {}} cartCount={0} />
+        <main className="flex-1 max-w-2xl mx-auto w-full px-6 py-24">
           <h1 className="text-h2 text-primary-50 mb-1">Pembayaran</h1>
           <p className="text-base text-secondary-50 mb-8">
             Selesaikan pembayaran kamu
@@ -84,8 +84,8 @@ export default function CheckoutPage() {
   ) {
     return (
       <div className="min-h-screen flex flex-col bg-secondary-DEFAULT/20">
-        <Navbar tableNumber={tableNumber} />
-        <main className="flex-1 max-w-2xl mx-auto w-full px-6 py-10">
+        <Navbar tableNumber={tableNumber} onCartClick={() => {}} cartCount={0} />
+        <main className="flex-1 max-w-2xl mx-auto w-full px-6 py-24">
           <h1 className="text-h2 text-primary-50 mb-1">Order Details</h1>
           <p className="text-base text-secondary-50 mb-8">
             Your order has been successfully created
@@ -107,7 +107,7 @@ export default function CheckoutPage() {
   // Checkout Form 
   return (
     <div className="min-h-screen flex flex-col bg-secondary-DEFAULT/20">
-      <Navbar tableNumber={tableNumber} />
+      <Navbar tableNumber={tableNumber} onCartClick={() => {}} cartCount={0} />
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-10">
         <h1 className="text-h2 text-primary-50 mb-1">Checkout</h1>
