@@ -14,13 +14,10 @@ export interface NavbarProps {
 export function Navbar({ tableNumber, onCartClick, cartCount }: NavbarProps) {
     const { totalItems } = useCart();
     const router = useRouter();
-    const searchParams = useSearchParams();
-
-    // Baca token dari URL supaya tetap terbawa saat navigasi ke /orders
-    const token = searchParams.get("token") ?? "";
 
     const handleOrdersClick = () => {
-        router.push(`/orders?token=${token}&table=${tableNumber}`);
+        const token = sessionStorage.getItem("tableToken") ?? "";
+        router.push(`/orders?table=${tableNumber}&token=${token}`);
     };
 
     return (
@@ -44,7 +41,7 @@ export function Navbar({ tableNumber, onCartClick, cartCount }: NavbarProps) {
                 </p>
             </div>
 
-            {/* Icon Scroll → buka /orders */}
+            {/* Icon Scroll -> buka /orders */}
             <button
             onClick={handleOrdersClick}
             className="relative flex items-center justify-center w-10 h-10 rounded-full bg-primary text-white hover:bg-primary-30 transition-colors"
