@@ -13,32 +13,25 @@ api.interceptors.request.use((config) => {
     let token = process.env.NEXT_PUBLIC_API_TOKEN ?? "abc";
 
     if (typeof window !== "undefined") {
-        const urlParams = new URLSearchParams(window.location.search);
-        const tokenFromUrl = urlParams.get("token");
-        
-        const tokenFromStorage = localStorage.getItem("tableToken");
-
-        if (tokenFromUrl) {
-            token = tokenFromUrl;
-            localStorage.setItem("tableToken", tokenFromUrl); 
-        } else if (tokenFromStorage) {
+        // Baca dari sessionStorage 
+        const tokenFromStorage = sessionStorage.getItem("tableToken");
+        if (tokenFromStorage) {
             token = tokenFromStorage;
         }
     }
 
-    // Pasang token ke header
     config.headers.Authorization = `Bearer ${token}`;
     return config;
 });
 
-// Response interceptor: normalize error messages 
+// Response interceptor: normalize error messages
 api.interceptors.response.use(
     (response) => response,
     (error) => {
         const message =
-        error?.response?.data?.message ??
-        error?.message ??
-        "Terjadi kesalahan, coba lagi.";
+            error?.response?.data?.message ??
+            error?.message ??
+            "Terjadi kesalahan, coba lagi.";
         return Promise.reject(new Error(message));
     }
 );
