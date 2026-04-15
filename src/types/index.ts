@@ -149,3 +149,22 @@ export interface CheckoutSubmitPayload {
   notes: string;
   payment_method: PaymentMethod;
 }
+
+// TABLE SESSIONS
+
+// Raw API response from POST /api/table-sessions/generate
+export interface ApiTableSessionResponse {
+  data: {
+    token: string;
+    table_id: number;
+    seated_at: string;
+  };
+}
+
+// Normalized table session used in the frontend
+export interface TableSession {
+  token: string;
+  tableId: number;
+  seatedAt: string;
+  qrUrl: string;
+}
