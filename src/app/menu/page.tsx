@@ -15,17 +15,65 @@ import { useMenu }         from "@/hooks/useMenu";
 import { useCart }         from "@/context/CartContext";
 import type { MenuItem }   from "@/types";
 
-const TABLE_NUMBER = "1";
 
 export default function MenuPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
+
     const urlToken = searchParams.get("token");
+    const urlTable = searchParams.get("table");
 
     const [categoryId, setCategoryId] = useState("all");
-    const [search,     setSearch]     = useState("");
+    const [search, setSearch] = useState("");
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [tableToken, setTableToken] = useState("");
+    const [tableNumber, setTableNumber] = useState("");
+
+    useEffect(() => {
+        const bootstrap = async () => {
+            if (urlToken) {
+                // Simpan ke sessionStorage, lalu bersihkan URL
+                sessionStorage.setItem("tableToken", urlToken);
+                if (urlTable) sessionStorage.setItem("tableNumber", urlTable);
+
+                setTableToken(urlToken);
+                setTableNumber(urlTable ?? "");
+
+                // Hapus token & table dari URL
+                router.replace("/menu");
+                return;
+            }
+
+            // Tidak ada token di URL -> coba baca dari sessionStorage (user refresh)
+            const storedToken = sessionStorage.getItem("tableToken");
+            const storedTable = sessionStorage.getItem("tableNumber");
+
+            if (storedToken) {
+                setTableToken(storedToken);
+                setTableNumber(storedTable ?? "");
+                return;
+            }
+
+            // Fallback dev: fetch token sementara dari endpoint dev
+            try {
+                const response = await fetch (
+                    "https://resto-kita-production.up.railway.app/api/sementara",
+                    { method: "GET", headers: { Accept: "application/json" }, cache: "no-store" }
+                );
+                const json = await response.json();
+                if (json?.data?.token) {
+                    const devToken = json.data.token;
+                    sessionStorage.setItem("tableToken", devToken);
+                    setTableToken(devToken);
+                    console.log("Dev token didapat:", devToken);
+                }
+            } catch (err) {
+                console.error("Gagal fetch token sementara:", err);
+            }
+        };
+
+        bootstrap();
+    }, []);
 
     // Data fetching + client-side filter
     const { menuItems, categories, isLoading, isError, error } = useMenu({
@@ -42,50 +90,12 @@ export default function MenuPage() {
         totalPrice,
     } = useCart();
 
-    useEffect(() => {
-        const fetchDevToken = async () => {        
-            if (!urlToken) {
-                try {
-                    const response = await fetch("https://resto-kita-production.up.railway.app/api/sementara", {
-                        method: "GET",
-                        headers: { "Accept": "application/json" },
-                        cache: "no-store",
-                    });
-                    
-                    const json = await response.json();
-                    if (json?.data?.token) {
-                        const devToken = json.data.token;
-                        setTableToken(devToken);
-                        console.log("Dev Token berhasil didapat:", devToken);                                            
-                        router.replace(`/menu?token=${devToken}`);
-                    }
-                } catch (err) {
-                    console.error("Gagal fetch token sementara:", err);
-                }
-            } else {
-                setTableToken(urlToken);
-            }
-        };
-
-        fetchDevToken();
-    }, [urlToken, router]);
-
     const handleSearch = useCallback((val: string) => setSearch(val), []);
-
-    // Submit order
-    const handleSubmitOrder = useCallback(async () => {
-        try {
-            console.log("Order submitted:", { tableNumber: TABLE_NUMBER, cartItems });
-            setIsCartOpen(false);
-        } catch (err) {
-            console.error("Order failed:", err);
-        }
-    }, [cartItems]);
 
     return (
         <>
         <Navbar
-            tableNumber={TABLE_NUMBER}
+            tableNumber={tableNumber}
             cartCount={totalItems}
             onCartClick={() => setIsCartOpen(true)}
         />
@@ -211,9 +221,7 @@ export default function MenuPage() {
             onUpdateQty={updateQty}
             onRemove={removeItem}
             tableToken={tableToken}
-            // onSubmitOrder={handleSubmitOrder}
-            // isSubmitting={false}
-            tableNumber={TABLE_NUMBER}
+            tableNumber={tableNumber}
         />
         </>
     );
