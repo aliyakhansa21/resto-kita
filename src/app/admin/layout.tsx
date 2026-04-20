@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Providers } from '../providers';
 import React from 'react';
+import AdminShell from '../components/admin/AdminShell';
 
 export const metadata: Metadata = {
     title: "Admin - Our Restaurant",
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     return (
         <Providers>
-            {children}
+            <AdminShell>{children}</AdminShell>
         </Providers>
     )
 }
