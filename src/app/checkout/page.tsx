@@ -109,7 +109,7 @@ export default function CheckoutPage() {
     <div className="min-h-screen flex flex-col bg-secondary-DEFAULT/20">
       <Navbar tableNumber={tableNumber} cartCount={0} onCartClick={() => {}} />
 
-      <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-10">
+      <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-24">
         <h1 className="text-h2 text-primary-50 mb-1">Checkout</h1>
         <p className="text-base text-secondary-50 mb-8">
           Please review your order and complete your details.
