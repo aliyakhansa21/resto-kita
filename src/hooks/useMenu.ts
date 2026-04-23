@@ -11,7 +11,6 @@ interface UseMenuParams {
 }
 
 export function useMenu({ categoryId = "all", search = "" }: UseMenuParams = {}) {
-    // Fetch semua items — di-cache, tidak refetch saat filter berubah
     const {
         data: allItems = [],
         isLoading: isLoadingItems,
@@ -25,7 +24,6 @@ export function useMenu({ categoryId = "all", search = "" }: UseMenuParams = {})
         retry: 2,
     });
 
-    // Fetch semua kategori — untuk render tombol filter dinamis
     const {
         data: categories = [],
         isLoading: isLoadingCategories,
@@ -35,18 +33,26 @@ export function useMenu({ categoryId = "all", search = "" }: UseMenuParams = {})
         staleTime: 1000 * 60 * 10,       
     });
 
-    // Client-side filter — tidak trigger network request sama sekali
-    const menuItems = useMemo(() => {
+    const menuItems = useMemo(() => {    
         return allItems.filter((item) => {
-        const matchCategory =
-            categoryId === "all" || item.category.id === categoryId;
+            const matchCategory =
+                categoryId === "all" || String(item.category?.id) === String(categoryId);
 
-        const matchSearch = item.name
-            .toLowerCase()
-            .includes(search.trim().toLowerCase());
+            const matchSearch = item.name
+                .toLowerCase()
+                .includes(search.trim().toLowerCase());
 
-        return matchCategory && matchSearch ;
-        // && item.isAvailable
+            const isActive = item.is_active;
+            const matchActive =
+                isActive === undefined ? true : 
+                (
+                    String(isActive) === "1" || 
+                    String(isActive).toLowerCase() === "true" ||
+                    isActive === 1 ||
+                    isActive === true
+                );
+
+            return matchCategory && matchSearch && matchActive;
         });
     }, [allItems, categoryId, search]);
 

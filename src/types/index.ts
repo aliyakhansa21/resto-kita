@@ -10,7 +10,7 @@ export interface ApiCategory {
     description: string;
     price: string;        
     img: string;          
-    is_active: string;    
+    is_active: number | boolean;    
     category: ApiCategory;
     }
 
@@ -34,7 +34,7 @@ export interface ApiCategory {
     description: string;
     price: number;         
     imageUrl?: string | null;      
-    isAvailable: boolean;  
+    is_active: number | boolean;  
     category: Category;
     }
 
