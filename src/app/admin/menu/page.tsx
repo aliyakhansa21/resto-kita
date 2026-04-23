@@ -137,7 +137,7 @@ export default function DaftarMenuPage() {
                                                 disabled={isToggling}
                                                 className={cn(
                                                     "relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-10",
-                                                    item.is_active === 1 ? "bg-green-500" : "bg-stone-300",
+                                                    item.is_active === 1 ? "bg-green-500" : "bg-red-500",
                                                     isToggling ? "opacity-50 cursor-wait" : "cursor-pointer"
                                                 )}
                                             >
