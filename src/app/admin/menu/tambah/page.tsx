@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils"; 
 import type { Category } from "@/types";
+import { useCreateMenu } from "@/hooks/useCreateMenu";
 
 interface MenuFormState {
     name: string;
@@ -22,6 +23,8 @@ export default function TambahMenuPage() {
     const queryClient = useQueryClient();
     
     const [previewImg, setPreviewImg] = useState<string | null>(null);
+    const [imageFile, setImageFile] = useState<File | null>(null); 
+    
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [form, setForm] = useState<MenuFormState>({
         name: "",
@@ -39,21 +42,7 @@ export default function TambahMenuPage() {
         },
     });
 
-    // Mutation untuk Submit Form
-    const createMutation = useMutation({
-        mutationFn: async (payload: Omit<MenuFormState, "price"> & { price: number }) => {
-            // Note: Kalau butuh upload gambar beneran ke backend, ubah payload ini jadi FormData
-            return api.post("/admin/items", payload);
-        },
-        onSuccess: () => {
-            // Invalidate cache biar list menu langsung update
-            queryClient.invalidateQueries({ queryKey: ["admin-menu-items"] });
-            router.push("/admin/menu");
-        },
-        onError: (error: any) => {
-            alert(error.message || "Gagal menyimpan menu. Coba lagi.");
-        }
-    });
+    const createMutation = useCreateMenu();
 
     const validate = () => {
         const errs: Record<string, string> = {};
@@ -74,17 +63,32 @@ export default function TambahMenuPage() {
         }
         
         setErrors({});
-        createMutation.mutate({
-            ...form,
-            price: Number(form.price),
-            category_id: form.category_id,
-        });
+
+        createMutation.mutate(
+            {
+                name: form.name,
+                description: form.description,
+                price: Number(form.price),
+                category_id: Number(form.category_id),
+                is_active: form.is_active,
+                imageFile: imageFile, 
+            },
+            {
+                onSuccess: () => {
+                    router.push("/admin/menu");
+                },
+                onError: (error: any) => {
+                    alert(error.message || "Gagal menyimpan menu. Coba lagi.");
+                }
+            }
+        );
     };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             setPreviewImg(URL.createObjectURL(file));
+            setImageFile(file); 
         }
     };
 
@@ -205,7 +209,10 @@ export default function TambahMenuPage() {
                                     className="w-full h-56 object-cover rounded-xl border border-stone-200 shadow-sm"
                                 />
                                 <button 
-                                    onClick={() => setPreviewImg(null)}
+                                    onClick={() => {
+                                        setPreviewImg(null);
+                                        setImageFile(null); 
+                                    }}
                                     className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-md"
                                     title="Hapus Gambar"
                                 >
