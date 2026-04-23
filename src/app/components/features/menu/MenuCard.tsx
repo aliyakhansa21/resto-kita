@@ -5,23 +5,14 @@ import { ShoppingCart } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import type { MenuItem } from "@/types";
 import { useCart } from "@/context/CartContext";
+import { getCategoryColor } from "@/utils/categoryColor";
 
 interface MenuCardProps {
     item: MenuItem;
 }
 
-function getCategoryColor(name: string): string {
-    const n = name.toLowerCase();
-    if (n.includes("food"))    return "bg-primary text-white";
-    if (n.includes("drink"))   return "bg-accent-10 text-white";
-    if (n.includes("dessert")) return "bg-primary-10 text-white";
-    return "bg-secondary-50 text-white";
-}
-
 export function MenuCard({ item }: MenuCardProps) {
     const { addToCart } = useCart();
-
-    const BACKEND_URL = "http://localhost:8000";
 
     const validImageUrl =
         !item.imageUrl || item.imageUrl.trim() === "" || !item.imageUrl.startsWith("http")

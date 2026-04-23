@@ -5,15 +5,7 @@ import Link from "next/link";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useAdminMenu, type AdminMenuItem } from "@/hooks/useAdminMenu";
 import { formatCurrency, cn } from "@/lib/utils"; 
-
-// reuse function untuk menentukan warna kategori
-function getCategoryColor(name: string): string {
-    const n = name?.toLowerCase() || "";
-    if (n.includes("food") || n.includes("makanan")) return "bg-primary-10 text-primary-50";
-    if (n.includes("drink") || n.includes("minuman")) return "bg-accent-10 text-accent-50";
-    if (n.includes("dessert")) return "bg-amber-100 text-amber-700";
-    return "bg-stone-100 text-stone-600";
-}
+import { getCategoryColor } from "@/utils/categoryColor";
 
 export default function DaftarMenuPage() {
     const [currentPage, setCurrentPage] = useState(1);
@@ -160,14 +152,14 @@ export default function DaftarMenuPage() {
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">
                                                 <Link href={`/admin/menu/edit/${item.id}`}>
-                                                    <button className="p-2 text-stone-400 hover:text-primary-50 hover:bg-primary-10/20 rounded-md transition-colors">
+                                                    <button className="p-2 text-[#D97706] hover:bg-primary-10/20 rounded-md transition-colors">
                                                         <Pencil size={18} />
                                                     </button>
                                                 </Link>
                                                 <button
                                                     onClick={() => handleDelete(item.id)}
                                                     disabled={isDeleting}
-                                                    className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-wait"
+                                                    className="p-2 text-[#DC2626] hover:bg-primary-10/20 rounded-md transition-colors disabled:opacity-50 disabled:cursor-wait"
                                                 >
                                                     <Trash2 size={18} />
                                                 </button>
