@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 import type { Category } from "@/types";
+import { getImageUrl } from "@/utils/imageUrl"; 
 
 interface MenuFormState {
     name: string;
@@ -24,6 +25,7 @@ export default function EditMenuPage() {
     const queryClient = useQueryClient();
 
     const [previewImg, setPreviewImg] = useState<string | null>(null);
+    const [imageFile, setImageFile] = useState<File | null>(null); // State khusus untuk upload gambar baru
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [form, setForm] = useState<MenuFormState>({
         name: "",
@@ -47,29 +49,52 @@ export default function EditMenuPage() {
         queryKey: ["admin-menu-item", id],
         queryFn: async () => {
             const { data } = await api.get(`/admin/items/${id}`);
-            return data.data;
+            // Menangani format response agar lebih aman
+            return data.data || data; 
         },
-        enabled: !!id, // Hanya fetch kalau ID-nya ada
+        enabled: !!id,
+        retry: 1, // Meminimalisir loading terus-menerus kalau API 404
     });
 
     // Set nilai form ketika data item berhasil di-fetch
     useEffect(() => {
         if (itemData) {
             setForm({
-                name: itemData.name ?? "",
-                description: itemData.description ?? "",
-                price: String(parseFloat(itemData.price ?? "0")),
-                category_id: String(itemData.category?.id ?? ""),
+                name: itemData.name || "",
+                description: itemData.description || "",
+                price: itemData.price ? String(Number(itemData.price)) : "0",
+                category_id: itemData.category?.id ? String(itemData.category.id) : "",
                 is_active: itemData.is_active === 1 || itemData.is_active === true,
             });
-            if (itemData.img) setPreviewImg(itemData.img);
+            
+            // Gunakan fungsi helper agar gambar yang lama bisa muncul
+            if (itemData.img) {
+                setPreviewImg(getImageUrl(itemData.img));
+            }
         }
     }, [itemData]);
 
     // Mutation untuk Update Form
     const updateMutation = useMutation({
-        mutationFn: async (payload: Omit<MenuFormState, "price"> & { price: number }) => {
-            return api.put(`/admin/items/${id}`, payload);
+        mutationFn: async () => {
+            // Trik Laravel: Menggunakan POST dengan indikator _method="PUT"
+            // agar FormData (termasuk file gambar) bisa terbaca oleh backend
+            const formData = new FormData();
+            formData.append("_method", "PUT");
+            formData.append("name", form.name);
+            formData.append("description", form.description);
+            formData.append("price", form.price);
+            formData.append("category_id", form.category_id);
+            formData.append("is_active", form.is_active ? "1" : "0");
+            
+            // Masukkan gambar baru JIKA user memilih ganti gambar
+            if (imageFile) {
+                formData.append("img", imageFile);
+            }
+
+            return api.post(`/admin/items/${id}`, formData, {
+                headers: { "Content-Type": "multipart/form-data" }
+            });
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["admin-menu-items"] });
@@ -114,11 +139,7 @@ export default function EditMenuPage() {
         }
         
         setErrors({});
-        updateMutation.mutate({
-            ...form,
-            price: Number(form.price),
-            category_id: form.category_id,
-        });
+        updateMutation.mutate(); 
     };
 
     const handleDelete = () => {
@@ -131,6 +152,7 @@ export default function EditMenuPage() {
         const file = e.target.files?.[0];
         if (file) {
             setPreviewImg(URL.createObjectURL(file));
+            setImageFile(file); // Menyimpan file fisik ke state untuk disubmit
         }
     };
 
@@ -259,7 +281,10 @@ export default function EditMenuPage() {
                                     className="w-full h-56 object-cover rounded-xl border border-stone-200 shadow-sm"
                                 />
                                 <button 
-                                    onClick={() => setPreviewImg(null)}
+                                    onClick={() => {
+                                        setPreviewImg(null);
+                                        setImageFile(null);
+                                    }}
                                     className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-md"
                                     title="Hapus Gambar"
                                 >
