@@ -2,28 +2,120 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, AlertTriangle, X } from "lucide-react";
 import { useAdminMenu, type AdminMenuItem } from "@/hooks/useAdminMenu";
-import { formatCurrency, cn } from "@/lib/utils"; 
+import { formatCurrency, cn } from "@/lib/utils";
 import { getCategoryColor } from "@/utils/categoryColor";
 
+// Delete Confirmation Modal 
+function DeleteConfirmModal({
+    itemName,
+    title = "Hapus item ini?",
+    onConfirm,
+    onCancel,
+    isDeleting,
+}: {
+    itemName: string;
+    title?: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+    isDeleting: boolean;
+}) {
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-sm"
+            onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+        >
+            <div className="relative w-full max-w-md rounded-2xl shadow-2xl overflow-hidden bg-stone-50 border border-secondary animate-in fade-in zoom-in-95 duration-200">
+                {/* Close button */}
+                <button
+                    onClick={onCancel}
+                    disabled={isDeleting}
+                    className="absolute top-4 right-4 p-1.5 rounded-full text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors disabled:opacity-50"
+                >
+                    <X size={18} />
+                </button>
+
+                {/* Body */}
+                <div className="px-6 pt-8 pb-5 flex flex-col items-center text-center">
+                    {/* Icon */}
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4 bg-red-100 border-2 border-red-200">
+                        <AlertTriangle size={30} className="text-red-600" />
+                    </div>
+
+                    <h2 className="text-xl font-bold text-primary-40">
+                        {title}
+                    </h2>
+                    <p className="mt-2 text-sm text-secondary-50">
+                        Kamu akan menghapus{" "}
+                        <span className="font-semibold text-primary">
+                            &ldquo;{itemName}&rdquo;
+                        </span>
+                        . Tindakan ini tidak dapat dibatalkan.
+                    </p>
+                </div>
+
+                {/* Divider */}
+                <div className="mx-6 h-px bg-secondary" />
+
+                {/* Actions */}
+                <div className="px-6 py-5 flex gap-3 justify-end">
+                    <button
+                        onClick={onCancel}
+                        disabled={isDeleting}
+                        className="px-5 py-2.5 rounded-lg text-sm font-semibold bg-secondary hover:bg-secondary-10 text-primary-40 border border-secondary-10 transition-all duration-200 active:scale-95 disabled:opacity-50"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        onClick={onConfirm}
+                        disabled={isDeleting}
+                        className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-all duration-200 active:scale-95 disabled:opacity-70 disabled:cursor-wait flex items-center gap-2"
+                    >
+                        {isDeleting ? (
+                            <>
+                                <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin inline-block" />
+                                Menghapus...
+                            </>
+                        ) : (
+                            <>
+                                <Trash2 size={15} />
+                                Ya, Hapus
+                            </>
+                        )}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// Main Page 
 export default function DaftarMenuPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [perPage, setPerPage] = useState(10);
 
-    const { 
-        items, 
-        meta, 
-        isLoading, 
-        toggleStatus, 
-        isToggling, 
-        deleteItem, 
-        isDeleting 
+    // Delete modal state
+    const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
+
+    const {
+        items,
+        meta,
+        isLoading,
+        toggleStatus,
+        isToggling,
+        deleteItem,
+        isDeleting
     } = useAdminMenu({ page: currentPage, perPage });
 
-    const handleDelete = (id: number) => {
-        if (confirm("Yakin ingin menghapus menu ini? Tindakan ini tidak dapat dibatalkan.")) {
-            deleteItem(id);
+    const handleDelete = (item: AdminMenuItem) => {
+        setDeleteTarget({ id: item.id, name: item.name });
+    };
+
+    const confirmDelete = () => {
+        if (deleteTarget) {
+            deleteItem(deleteTarget.id);
+            setDeleteTarget(null);
         }
     };
 
@@ -31,6 +123,16 @@ export default function DaftarMenuPage() {
 
     return (
         <div className="p-6 md:p-8 max-w-7xl 8mx-auto">
+            {/* Delete Confirmation Modal */}
+            {deleteTarget && (
+                <DeleteConfirmModal
+                    itemName={deleteTarget.name}
+                    onConfirm={confirmDelete}
+                    onCancel={() => setDeleteTarget(null)}
+                    isDeleting={isDeleting}
+                />
+            )}
+
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
@@ -157,7 +259,7 @@ export default function DaftarMenuPage() {
                                                     </button>
                                                 </Link>
                                                 <button
-                                                    onClick={() => handleDelete(item.id)}
+                                                    onClick={() => handleDelete(item)}
                                                     disabled={isDeleting}
                                                     className="p-2 text-[#DC2626] hover:bg-primary-10/20 rounded-md transition-colors disabled:opacity-50 disabled:cursor-wait"
                                                 >
@@ -178,7 +280,7 @@ export default function DaftarMenuPage() {
                         <span className="text-sm text-stone-500">
                             Showing <span className="font-semibold text-stone-900">{meta.from ?? 0}</span> to <span className="font-semibold text-stone-900">{meta.to ?? 0}</span> of <span className="font-semibold text-stone-900">{meta.total}</span> entries
                         </span>
-                        
+
                         <div className="flex items-center gap-1.5">
                             <PaginationButton
                                 label="Prev"
@@ -207,16 +309,16 @@ export default function DaftarMenuPage() {
 }
 
 // Sub-komponen untuk Pagination 
-function PaginationButton({ 
-    label, 
-    onClick, 
-    disabled, 
-    active 
-}: { 
-    label: string; 
-    onClick: () => void; 
-    disabled?: boolean; 
-    active?: boolean; 
+function PaginationButton({
+    label,
+    onClick,
+    disabled,
+    active
+}: {
+    label: string;
+    onClick: () => void;
+    disabled?: boolean;
+    active?: boolean;
 }) {
     return (
         <button
@@ -224,8 +326,8 @@ function PaginationButton({
             disabled={disabled}
             className={cn(
                 "px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200",
-                active 
-                    ? "bg-primary text-white shadow-sm" 
+                active
+                    ? "bg-primary text-white shadow-sm"
                     : "bg-white border border-stone-200 text-stone-600 hover:bg-stone-50",
                 disabled && "opacity-50 cursor-not-allowed hover:bg-white"
             )}

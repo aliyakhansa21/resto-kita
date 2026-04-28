@@ -1,19 +1,100 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Search, X, Save } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, X, Save, AlertTriangle } from "lucide-react";
 import { useAdminCategories } from "@/hooks/useAdminCategories";
 import { cn } from "@/lib/utils";
 import type { Category } from "@/types";
 
 type ModalMode = "add" | "edit" | null;
 
+// Delete Confirmation Modal 
+function DeleteConfirmModal({
+    itemName,
+    onConfirm,
+    onCancel,
+    isDeleting,
+}: {
+    itemName: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+    isDeleting: boolean;
+}) {
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary-40/50 backdrop-blur-sm"
+            onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+        >
+            <div className="relative w-full max-w-md rounded-2xl shadow-2xl overflow-hidden bg-stone-50 border border-secondary animate-in fade-in zoom-in-95 duration-200">
+                {/* Close button */}
+                <button
+                    onClick={onCancel}
+                    disabled={isDeleting}
+                    className="absolute top-4 right-4 p-1.5 rounded-full text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors disabled:opacity-50"
+                >
+                    <X size={18} />
+                </button>
+
+                {/* Body */}
+                <div className="px-6 pt-8 pb-5 flex flex-col items-center text-center">
+                    {/* Icon */}
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4 bg-red-100 border-2 border-red-200">
+                        <AlertTriangle size={30} className="text-red-600" />
+                    </div>
+
+                    <h2 className="text-xl font-bold text-primary-40">
+                        Hapus Kategori?
+                    </h2>
+                    <p className="mt-2 text-sm text-secondary-50">
+                        Kamu akan menghapus{" "}
+                        <span className="font-semibold text-primary">
+                            &ldquo;{itemName}&rdquo;
+                        </span>
+                        . Tindakan ini tidak dapat dibatalkan.
+                    </p>
+                </div>
+
+                {/* Divider */}
+                <div className="mx-6 h-px bg-secondary" />
+
+                {/* Actions */}
+                <div className="px-6 py-5 flex gap-3 justify-end">
+                    <button
+                        onClick={onCancel}
+                        disabled={isDeleting}
+                        className="px-5 py-2.5 rounded-lg text-sm font-semibold bg-secondary hover:bg-secondary-10 text-primary-40 border border-secondary-10 transition-all duration-200 active:scale-95 disabled:opacity-50"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        onClick={onConfirm}
+                        disabled={isDeleting}
+                        className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-all duration-200 active:scale-95 disabled:opacity-70 disabled:cursor-wait flex items-center gap-2"
+                    >
+                        {isDeleting ? (
+                            <>
+                                <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin inline-block" />
+                                Menghapus...
+                            </>
+                        ) : (
+                            <>
+                                <Trash2 size={15} />
+                                Ya, Hapus
+                            </>
+                        )}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function ManajemenKategoriPage() {
-    const { 
-        categories, 
-        isLoading, 
-        createCategory, 
-        updateCategory, 
+    const {
+        categories,
+        isLoading,
+        createCategory,
+        updateCategory,
         deleteCategory,
         isCreating,
         isUpdating,
@@ -30,6 +111,9 @@ export default function ManajemenKategoriPage() {
     const [modalData, setModalData] = useState({ name: "", description: "" });
     const [editingId, setEditingId] = useState<string | null>(null);
     const [modalErrors, setModalErrors] = useState<Record<string, string>>({});
+
+    // States for Delete Modal
+    const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
     // Filtering Logic
     const filtered = categories.filter((c) =>
@@ -86,13 +170,18 @@ export default function ManajemenKategoriPage() {
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (confirm("Yakin ingin menghapus kategori ini?")) {
-            try {
-                await deleteCategory(id);
-            } catch (err: any) {
-                alert(err.message || "Gagal menghapus kategori.");
-            }
+    const handleDelete = (cat: Category) => {
+        setDeleteTarget({ id: cat.id, name: cat.name });
+    };
+
+    const confirmDelete = async () => {
+        if (!deleteTarget) return;
+        try {
+            await deleteCategory(deleteTarget.id);
+            setDeleteTarget(null);
+        } catch (err: any) {
+            alert(err.message || "Gagal menghapus kategori.");
+            setDeleteTarget(null);
         }
     };
 
@@ -100,6 +189,15 @@ export default function ManajemenKategoriPage() {
 
     return (
         <div className="p-6 md:p-8 max-w-7xl mx-auto">
+            {/* Delete Confirmation Modal */}
+            {deleteTarget && (
+                <DeleteConfirmModal
+                    itemName={deleteTarget.name}
+                    onConfirm={confirmDelete}
+                    onCancel={() => setDeleteTarget(null)}
+                    isDeleting={isDeleting}
+                />
+            )}
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
@@ -200,7 +298,7 @@ export default function ManajemenKategoriPage() {
                                                     <Pencil size={18} />
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDelete(cat.id)}
+                                                    onClick={() => handleDelete(cat)}
                                                     disabled={isDeleting}
                                                     className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-wait"
                                                     title="Hapus Kategori"
@@ -322,8 +420,8 @@ function PageBtn({ label, onClick, disabled, active }: { label: string; onClick:
             disabled={disabled}
             className={cn(
                 "px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200",
-                active 
-                    ? "bg-primary text-white shadow-sm" 
+                active
+                    ? "bg-primary text-white shadow-sm"
                     : "bg-white border border-stone-200 text-stone-600 hover:bg-stone-50",
                 disabled && "opacity-50 cursor-not-allowed hover:bg-white"
             )}
