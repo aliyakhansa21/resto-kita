@@ -10,28 +10,31 @@ const api = axios.create({
 
 // Request interceptor — attach Bearer token ke setiap request
 api.interceptors.request.use((config) => {
-    let token = process.env.NEXT_PUBLIC_API_TOKEN ?? "abc";
+    let token = process.env.NEXT_PUBLIC_API_TOKEN ?? "abc"; 
 
     if (typeof window !== "undefined") {
-        // Baca dari sessionStorage 
-        const tokenFromStorage = sessionStorage.getItem("tableToken");
-        if (tokenFromStorage) {
-            token = tokenFromStorage;
+        const adminToken = localStorage.getItem("admin_token");
+        
+        const tableToken = sessionStorage.getItem("tableToken");
+
+        if (adminToken) {
+            token = adminToken;
+        } else if (tableToken) {
+            token = tableToken;
         }
     }
 
-    config.headers.Authorization = `Bearer ${token}`;
+    config.headers.Authorization = `Bearer ${token}`; 
     return config;
 });
 
-// Response interceptor: normalize error messages
 api.interceptors.response.use(
     (response) => response,
     (error) => {
         const message =
             error?.response?.data?.message ??
             error?.message ??
-            "Terjadi kesalahan, coba lagi.";
+            "Terjadi kesalahan, coba lagi."; 
         return Promise.reject(new Error(message));
     }
 );
