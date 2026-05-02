@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 
 const menuUtama = [
     { href: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { href: "/admin/orders", icon: ClipboardList, label: "Daftar Pesanan" },
+    { href: "/admin/pesanan", icon: ClipboardList, label: "Daftar Pesanan" },
     { href: "/admin/menu", icon: UtensilsCrossed, label: "Daftar Menu" },
     { href: "/admin/tables", icon: QrCode, label: "QR Table" }, 
 ];
