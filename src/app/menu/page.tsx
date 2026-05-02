@@ -161,12 +161,93 @@ export default function MenuPage() {
                 )}
 
                 {/* Error state */}
-                {isError && (
-                    <div className="text-center py-20 text-red-500">
-                        <p className="text-lg font-semibold">Gagal memuat menu</p>
-                        <p className="text-sm text-red-400 mt-1">{error?.message}</p>
-                    </div>
-                )}
+                {isError && (() => {
+                    const isSessionError = error?.message
+                        ?.toLowerCase()
+                        .includes("tablesession");
+
+                    return isSessionError ? (
+                        /* ── Sesi meja tidak valid ── */
+                        <div className="flex flex-col items-center justify-center py-20 px-4">
+                            <div className="bg-white rounded-3xl shadow-lg border border-amber-100 max-w-md w-full p-8 text-center">
+                                {/* Icon */}
+                                <div className="w-20 h-20 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-5">
+                                    <svg className="w-10 h-10 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                                    </svg>
+                                </div>
+
+                                {/* Title */}
+                                <h2 className="text-xl font-bold text-stone-800 mb-2">
+                                    Sesi Meja Tidak Valid
+                                </h2>
+
+                                {/* Description */}
+                                <p className="text-stone-500 text-sm leading-relaxed mb-6">
+                                    Kami tidak dapat menemukan sesi untuk meja ini. Kemungkinan link QR sudah kadaluarsa atau belum diaktifkan oleh kasir.
+                                </p>
+
+                                {/* Steps */}
+                                <div className="bg-amber-50 rounded-2xl p-4 text-left space-y-3 mb-6">
+                                    <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider mb-1">Yang bisa kamu lakukan:</p>
+                                    <div className="flex items-start gap-3">
+                                        <span className="w-6 h-6 rounded-full bg-amber-400 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
+                                        <p className="text-sm text-stone-600">Scan ulang QR code yang ada di meja kamu</p>
+                                    </div>
+                                    <div className="flex items-start gap-3">
+                                        <span className="w-6 h-6 rounded-full bg-amber-400 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">2</span>
+                                        <p className="text-sm text-stone-600">Atau minta bantuan kasir untuk mengaktifkan sesi meja</p>
+                                    </div>
+                                </div>
+
+                                {/* Reload button */}
+                                <button
+                                    onClick={() => window.location.reload()}
+                                    className="w-full py-3 px-6 rounded-2xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-semibold text-sm transition-all duration-150 shadow-md shadow-amber-200"
+                                >
+                                    Coba Lagi
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        /* ── Error umum ── */
+                        <div className="flex flex-col items-center justify-center py-20 px-4">
+                            <div className="bg-white rounded-3xl shadow-lg border border-red-100 max-w-md w-full p-8 text-center">
+                                {/* Icon */}
+                                <div className="w-20 h-20 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-5">
+                                    <svg className="w-10 h-10 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0 3.75h.007v.008H12V16.5zm9.75-.75a9.75 9.75 0 11-19.5 0 9.75 9.75 0 0119.5 0z" />
+                                    </svg>
+                                </div>
+
+                                {/* Title */}
+                                <h2 className="text-xl font-bold text-stone-800 mb-2">
+                                    Gagal Memuat Menu
+                                </h2>
+
+                                {/* Description */}
+                                <p className="text-stone-500 text-sm leading-relaxed mb-6">
+                                    Terjadi kesalahan saat mengambil data menu. Periksa koneksi internet kamu dan coba lagi.
+                                </p>
+
+                                {/* Error detail (collapsible hint) */}
+                                {error?.message && (
+                                    <p className="text-xs text-red-300 bg-red-50 rounded-xl px-4 py-2 font-mono mb-6 break-all">
+                                        {error.message}
+                                    </p>
+                                )}
+
+                                {/* Reload button */}
+                                <button
+                                    onClick={() => window.location.reload()}
+                                    className="w-full py-3 px-6 rounded-2xl bg-red-500 hover:bg-red-600 active:scale-95 text-white font-semibold text-sm transition-all duration-150 shadow-md shadow-red-200"
+                                >
+                                    Muat Ulang Halaman
+                                </button>
+                            </div>
+                        </div>
+                    );
+                })()}
 
                 {/* Empty state */}
                 {!isLoading && !isError && menuItems.length === 0 && (
