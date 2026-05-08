@@ -76,12 +76,11 @@ export default function PesananPage() {
       return [
         index + 1,
         order.order_id || "-",
-        // order.customer_name || "-",
+        order.customer_name || "-", // Sudah diperbaiki
         total,
         order.payment_status || "-",
-        order.table_number || "-",
+        order.table?.number || "-", // Sudah diperbaiki
         order.payment_method || "-",
-        // `"${(order.notes || "-").replace(/"/g, '""')}"`,
         dayjs(order.ordered_at).format("DD/MM/YYYY"),
       ].join(",");
     });
@@ -146,13 +145,13 @@ export default function PesananPage() {
               <tr className="border-b border-gray-100">
                 <th className="py-4 px-5 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">No</th>
                 <th className="py-4 px-5 text-xs font-bold text-gray-400 uppercase tracking-widest">Kode Pesanan</th>
-                <th className="py-4 px-5 text-xs font-bold text-gray-400 uppercase tracking-widest">Pelanggan</th>
+                <th className="py-4 px-5 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">Pelanggan</th>
                 <th className="py-4 px-5 text-xs font-bold text-gray-400 uppercase tracking-widest">Total</th>
                 <th className="py-4 px-5 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">Status</th>
                 <th className="py-4 px-5 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">No Meja</th>
                 <th className="py-4 px-5 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">Pembayaran</th>
-                <th className="py-4 px-5 text-xs font-bold text-gray-400 uppercase tracking-widest">Catatan</th>
-                <th className="py-4 px-5 text-xs font-bold text-gray-400 uppercase tracking-widest">Dibuat Pada</th>
+                <th className="py-4 px-5 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">Catatan</th>
+                <th className="py-4 px-5 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">Dibuat Pada</th>
                 <th className="py-4 px-5 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">Aksi</th>
               </tr>
             </thead>
@@ -225,8 +224,8 @@ export default function PesananPage() {
                       </td>
 
                       {/* Pelanggan */}
-                      <td className="py-4 px-5 font-medium text-gray-800 text-center">
-                        {"-"}
+                      <td className="py-4 px-5 font-medium text-gray-800 text-center capitalize">
+                        {order.customer_name || "-"}
                       </td>
 
                       {/* Total */}
@@ -243,8 +242,8 @@ export default function PesananPage() {
 
                       {/* No Meja */}
                       <td className="py-4 px-5 text-gray-600 text-center font-medium">
-                        {order.table_number
-                          ? String(order.table_number).padStart(2, "0")
+                        {order.table?.number
+                          ? String(order.table.number).padStart(2, "0")
                           : "-"}
                       </td>
 

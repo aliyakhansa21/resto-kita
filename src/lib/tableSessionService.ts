@@ -4,10 +4,13 @@ import type { ApiTableSessionResponse, TableSession } from "@/types";
 // Generate token table session baru dari backend
 // POST /api/table-sessions/generate
 
-export async function generateTableSession(tableId: number): Promise<TableSession> {
+export async function generateTableSession(tableId: number, customerName: string): Promise<TableSession> {
     const { data } = await api.post<ApiTableSessionResponse>(
-        "/table-sessions/generate",
-        { table_id: tableId }
+        "/admin/table-sessions/generate",
+        { 
+            table_id: tableId,
+            customer_name: customerName
+        }
     );
 
     const baseUrl =

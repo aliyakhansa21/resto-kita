@@ -64,9 +64,10 @@ export function CartModal({
         try {
         await placeOrder({
             orders: items.map((ci) => ({
-            item_id: Number(ci.menuItem.id),
-            amount: ci.quantity,
+                item_id: Number(ci.menuItem.id),
+                amount: ci.quantity,
             })),
+            table_number: parseInt(tableNumber),
         });
     
         clearCart();

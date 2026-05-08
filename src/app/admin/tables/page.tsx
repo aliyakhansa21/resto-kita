@@ -10,6 +10,7 @@ import type { TableSession } from "@/types";
 
 interface TableEntry {
     tableId: number;
+    customerName: string; // Tambahan untuk menyimpan input nama
     session: TableSession | null;
     isLoading: boolean;
     error: string | null;
@@ -36,23 +37,25 @@ function QRCard({
     entry,
     onGenerate,
     onRemove,
+    onNameChange,
 }: {
     entry: TableEntry;
-    onGenerate: (tableId: number) => void;
+    onGenerate: (tableId: number, name: string) => void;
     onRemove: (tableId: number) => void;
+    onNameChange: (tableId: number, name: string) => void;
 }) {
     const handleDownload = () => {
         if (!entry.canvasDataUrl || !entry.session) return;
         const link = document.createElement("a");
         link.href = entry.canvasDataUrl;
-        link.download = `qr-table-${entry.tableId}.png`;
+        link.download = `qr-table-${entry.tableId}-${entry.customerName || 'customer'}.png`;
         link.click();
     };
 
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden flex flex-col">
             {/* Header */}
-            <div className="bg-primary px-5 py-3 flex items-center justify-between">
+            <div className="bg-[#8C6D56] px-5 py-3 flex items-center justify-between">
                 <span className="text-white font-bold tracking-wide text-sm">
                     TABLE {entry.tableId}
                 </span>
@@ -70,7 +73,6 @@ function QRCard({
                 {entry.isLoading ? (
                     <div className="w-[150px] h-[150px] rounded-xl bg-stone-100 animate-pulse" />
                 ) : entry.canvasDataUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                         src={entry.canvasDataUrl}
                         alt={`QR Table ${entry.tableId}`}
@@ -83,22 +85,39 @@ function QRCard({
                 )}
 
                 {entry.error && (
-                    <p className="text-red-500 text-xs text-center">{entry.error}</p>
+                    <p className="text-red-500 text-[10px] text-center font-medium leading-tight">
+                        {entry.error}
+                    </p>
                 )}
 
                 {entry.session && (
-                    <p className="text-[10px] text-stone-400 text-center break-all leading-relaxed px-2">
-                        {entry.session.qrUrl}
-                    </p>
+                    <div className="text-center">
+                         <p className="text-[11px] font-bold text-stone-700">{entry.customerName}</p>
+                         <p className="text-[9px] text-stone-400 break-all leading-relaxed px-2">
+                            {entry.session.qrUrl}
+                        </p>
+                    </div>
                 )}
+            </div>
+
+            {/* Input Nama Pelanggan */}
+            <div className="px-4 pb-3">
+                <input
+                    type="text"
+                    placeholder="Nama Pelanggan..."
+                    value={entry.customerName}
+                    onChange={(e) => onNameChange(entry.tableId, e.target.value)}
+                    disabled={!!entry.session || entry.isLoading}
+                    className="w-full px-3 py-2 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#8C6D56]/30 bg-stone-50 disabled:bg-stone-100 disabled:text-stone-400 transition-all"
+                />
             </div>
 
             {/* Actions */}
             <div className="px-4 pb-4 flex gap-2">
                 <button
-                    onClick={() => onGenerate(entry.tableId)}
+                    onClick={() => onGenerate(entry.tableId, entry.customerName)}
                     disabled={entry.isLoading}
-                    className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-primary text-primary text-sm font-medium hover:bg-primary/5 transition-colors disabled:opacity-50"
+                    className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-[#8C6D56] text-[#8C6D56] text-sm font-medium hover:bg-[#8C6D56]/5 transition-colors disabled:opacity-50"
                 >
                     <RefreshCw size={14} className={entry.isLoading ? "animate-spin" : ""} />
                     {entry.session ? "Regenerate" : "Generate"}
@@ -107,7 +126,7 @@ function QRCard({
                 {entry.canvasDataUrl && (
                     <button
                         onClick={handleDownload}
-                        className="flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
+                        className="flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-[#8C6D56] text-white text-sm font-medium hover:bg-[#8C6D56]/90 transition-colors"
                     >
                         <Download size={14} />
                         PNG
@@ -122,15 +141,33 @@ function QRCard({
 
 export default function TableManagementPage() {
     const [tables, setTables] = useState<TableEntry[]>([
-        { tableId: 1, session: null, isLoading: false, error: null, canvasDataUrl: null },
-        { tableId: 2, session: null, isLoading: false, error: null, canvasDataUrl: null },
-        { tableId: 3, session: null, isLoading: false, error: null, canvasDataUrl: null },
+        { tableId: 1, customerName: "", session: null, isLoading: false, error: null, canvasDataUrl: null },
+        { tableId: 2, customerName: "", session: null, isLoading: false, error: null, canvasDataUrl: null },
+        { tableId: 3, customerName: "", session: null, isLoading: false, error: null, canvasDataUrl: null },
     ]);
     const [newTableId, setNewTableId] = useState("");
     const [addError, setAddError]     = useState("");
 
-    // ── Generate session for one table ───────────────────────────────────────
-    const handleGenerate = useCallback(async (tableId: number) => {
+    // Update state nama saat Admin mengetik
+    const handleNameChange = (tableId: number, name: string) => {
+        setTables((prev) =>
+            prev.map((t) =>
+                t.tableId === tableId ? { ...t, customerName: name, error: null } : t
+            )
+        );
+    };
+
+    // Generate session for one table
+    const handleGenerate = useCallback(async (tableId: number, customerName: string) => {
+        if (!customerName.trim()) {
+            setTables((prev) =>
+                prev.map((t) =>
+                    t.tableId === tableId ? { ...t, error: "Nama pelanggan wajib diisi" } : t
+                )
+            );
+            return;
+        }
+
         setTables((prev) =>
             prev.map((t) =>
                 t.tableId === tableId ? { ...t, isLoading: true, error: null } : t
@@ -138,7 +175,7 @@ export default function TableManagementPage() {
         );
 
         try {
-            const session       = await generateTableSession(tableId);
+            const session       = await generateTableSession(tableId, customerName);
             const canvasDataUrl = await renderQRToDataUrl(session.qrUrl);
 
             setTables((prev) =>
@@ -160,14 +197,14 @@ export default function TableManagementPage() {
         }
     }, []);
 
-    // ── Generate ALL ─────────────────────────────────────────────────────────
+    // Generate ALL yang sudah ada namanya
     const handleGenerateAll = useCallback(async () => {
-        for (const table of tables) {
-            await handleGenerate(table.tableId);
+        const targetTables = tables.filter(t => t.customerName.trim() && !t.session);
+        for (const table of targetTables) {
+            await handleGenerate(table.tableId, table.customerName);
         }
     }, [tables, handleGenerate]);
 
-    // ── Add table slot ───────────────────────────────────────────────────────
     const handleAddTable = () => {
         const id = parseInt(newTableId, 10);
         if (isNaN(id) || id <= 0) {
@@ -180,24 +217,22 @@ export default function TableManagementPage() {
         }
         setTables((prev) => [
             ...prev,
-            { tableId: id, session: null, isLoading: false, error: null, canvasDataUrl: null },
+            { tableId: id, customerName: "", session: null, isLoading: false, error: null, canvasDataUrl: null },
         ]);
         setNewTableId("");
         setAddError("");
     };
 
-    // ── Remove table slot ────────────────────────────────────────────────────
     const handleRemove = (tableId: number) => {
         setTables((prev) => prev.filter((t) => t.tableId !== tableId));
     };
 
-    // ── Download ALL ─────────────────────────────────────────────────────────
     const handleDownloadAll = async () => {
         const generated = tables.filter((t) => t.canvasDataUrl && t.session);
         for (const t of generated) {
             const link = document.createElement("a");
             link.href = t.canvasDataUrl!;
-            link.download = `qr-table-${t.tableId}.png`;
+            link.download = `qr-table-${t.tableId}-${t.customerName}.png`;
             link.click();
             await new Promise((r) => setTimeout(r, 300));
         }
@@ -209,7 +244,7 @@ export default function TableManagementPage() {
         <div className="min-h-screen bg-[#FAF7F2]">
             {/* Header */}
             <header className="bg-white border-b border-stone-200 px-6 py-4 flex items-center gap-3">
-                <span className="flex items-center justify-center w-9 h-9 rounded-full bg-primary text-white">
+                <span className="flex items-center justify-center w-9 h-9 rounded-full bg-[#8C6D56] text-white">
                     <Utensils size={16} />
                 </span>
                 <div>
@@ -225,7 +260,6 @@ export default function TableManagementPage() {
             <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
                 {/* Toolbar */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-                    {/* Add table */}
                     <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-2">
                             <input
@@ -235,11 +269,11 @@ export default function TableManagementPage() {
                                 onChange={(e) => { setNewTableId(e.target.value); setAddError(""); }}
                                 onKeyDown={(e) => e.key === "Enter" && handleAddTable()}
                                 placeholder="Nomor meja baru..."
-                                className="w-44 px-3 py-2 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
+                                className="w-44 px-3 py-2 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#8C6D56]/30 bg-white"
                             />
                             <button
                                 onClick={handleAddTable}
-                                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
+                                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#8C6D56] text-white text-sm font-medium hover:bg-[#8C6D56]/90 transition-colors"
                             >
                                 <Plus size={15} /> Tambah
                             </button>
@@ -247,11 +281,10 @@ export default function TableManagementPage() {
                         {addError && <p className="text-red-500 text-xs">{addError}</p>}
                     </div>
 
-                    {/* Bulk actions */}
                     <div className="flex items-center gap-2">
                         <button
                             onClick={handleGenerateAll}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-primary text-primary text-sm font-medium hover:bg-primary/5 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[#8C6D56] text-[#8C6D56] text-sm font-medium hover:bg-[#8C6D56]/5 transition-colors"
                         >
                             <RefreshCw size={14} />
                             Generate Semua
@@ -259,7 +292,7 @@ export default function TableManagementPage() {
                         {generatedCount > 0 && (
                             <button
                                 onClick={handleDownloadAll}
-                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#8C6D56] text-white text-sm font-medium hover:bg-[#8C6D56]/90 transition-colors"
                             >
                                 <Download size={14} />
                                 Download Semua ({generatedCount})
@@ -275,7 +308,7 @@ export default function TableManagementPage() {
                         <p className="text-sm">Belum ada meja. Tambah nomor meja dulu.</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {tables
                             .sort((a, b) => a.tableId - b.tableId)
                             .map((entry) => (
@@ -284,6 +317,7 @@ export default function TableManagementPage() {
                                     entry={entry}
                                     onGenerate={handleGenerate}
                                     onRemove={handleRemove}
+                                    onNameChange={handleNameChange}
                                 />
                             ))}
                     </div>

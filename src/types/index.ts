@@ -120,6 +120,7 @@ export interface PlaceOrderItem {
 
 export interface PlaceOrderPayload {
   orders: PlaceOrderItem[];
+  table_number: number;
 }
 
 // Response POST /api/orders → { data: PlaceOrderResponse }

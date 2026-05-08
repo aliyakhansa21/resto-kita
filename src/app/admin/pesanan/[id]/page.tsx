@@ -115,7 +115,9 @@ export default function OrderDetailPage() {
               <p className="text-xs font-medium text-primary-60 uppercase tracking-widest mb-1">
                 No. Meja
               </p>
-              <p className="font-medium text-gray-900">{order.table_number}</p>
+              <p className="font-medium text-gray-900">
+                {order.table?.number ? `Meja ${order.table.number}` : "-"}
+              </p>
             </div>
           </div>
 
@@ -139,7 +141,7 @@ export default function OrderDetailPage() {
                 Nama Pelanggan
               </p>
               <p className="font-medium text-gray-900">
-                {"-"}
+                {order.customer_name || "-"}
               </p>
             </div>
           </div>

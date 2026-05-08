@@ -44,5 +44,9 @@ export interface Order {
     payment_status: string;
     payment_method: string;
     ordered_at: string;
-    table_number: string;
+    customer_name: string | null;
+    table?: {
+        id: number;
+        number: number;
+    };
 }
