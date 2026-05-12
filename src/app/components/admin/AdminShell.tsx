@@ -12,13 +12,15 @@ import {
     LogOut,
     ChevronLeft,
     ChevronRight,
-    QrCode
+    QrCode,
+    Banknote
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const menuUtama = [
     { href: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/admin/pesanan", icon: ClipboardList, label: "Daftar Pesanan" },
+    { href: "/admin/payment-confirmation", icon: Banknote, label: "Konfirmasi Pembayaran" },
     { href: "/admin/menu", icon: UtensilsCrossed, label: "Daftar Menu" },
     { href: "/admin/tables", icon: QrCode, label: "QR Table" }, 
 ];
