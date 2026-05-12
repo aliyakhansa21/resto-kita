@@ -76,10 +76,10 @@ export default function PesananPage() {
       return [
         index + 1,
         order.order_id || "-",
-        order.customer_name || "-", // Sudah diperbaiki
+        order.customer_name || "-", 
         total,
         order.payment_status || "-",
-        order.table?.number || "-", // Sudah diperbaiki
+        order.table?.number || "-", 
         order.payment_method || "-",
         dayjs(order.ordered_at).format("DD/MM/YYYY"),
       ].join(",");
