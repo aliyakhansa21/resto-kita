@@ -1,135 +1,98 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { QrCode, Download, RefreshCw, Plus, Trash2, Utensils } from "lucide-react";
+import { useState, useCallback, useEffect } from "react";
+import { QrCode, Download, RefreshCw, Plus, Trash2 } from "lucide-react";
 import QRCode from "qrcode";
-import { generateTableSession } from "@/lib/tableSessionService";
+import { generateTableSession, getTableSessions } from "@/lib/tableSessionService";
 import type { TableSession } from "@/types";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// Types 
 
 interface TableEntry {
     tableId: number;
-    customerName: string; // Tambahan untuk menyimpan input nama
+    customerName: string;
     session: TableSession | null;
     isLoading: boolean;
     error: string | null;
     canvasDataUrl: string | null;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
 async function renderQRToDataUrl(text: string): Promise<string> {
     return QRCode.toDataURL(text, {
         width: 300,
         margin: 2,
-        color: {
-            dark:  "#292524", // stone-800
-            light: "#FAF7F2",
-        },
+        color: { dark: "#8C6D56", light: "#FAF7F2" },
         errorCorrectionLevel: "H",
     });
 }
 
-// ─── QRCard ───────────────────────────────────────────────────────────────────
+// Component: QRCard 
 
-function QRCard({
-    entry,
-    onGenerate,
-    onRemove,
-    onNameChange,
-}: {
-    entry: TableEntry;
-    onGenerate: (tableId: number, name: string) => void;
-    onRemove: (tableId: number) => void;
-    onNameChange: (tableId: number, name: string) => void;
+function QRCard({ entry, onGenerate, onRemove }: { 
+    entry: TableEntry; 
+    onGenerate: (id: number, name: string) => void;
+    onRemove: (id: number) => void;
 }) {
     const handleDownload = () => {
-        if (!entry.canvasDataUrl || !entry.session) return;
+        if (!entry.canvasDataUrl) return;
         const link = document.createElement("a");
         link.href = entry.canvasDataUrl;
-        link.download = `qr-table-${entry.tableId}-${entry.customerName || 'customer'}.png`;
+        link.download = `QR-Meja-${entry.tableId}-${entry.customerName}.png`;
         link.click();
     };
 
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden flex flex-col">
-            {/* Header */}
-            <div className="bg-[#8C6D56] px-5 py-3 flex items-center justify-between">
-                <span className="text-white font-bold tracking-wide text-sm">
-                    TABLE {entry.tableId}
-                </span>
-                <button
-                    onClick={() => onRemove(entry.tableId)}
-                    className="text-white/60 hover:text-white transition-colors"
-                    aria-label="Remove table"
-                >
-                    <Trash2 size={15} />
+            <div className="bg-primary-20 px-5 py-3 flex items-center justify-between text-white">
+                <span className="font-bold text-sm tracking-widest">TABLE {entry.tableId}</span>
+                <button onClick={() => onRemove(entry.tableId)} className="opacity-60 hover:opacity-100 transition-opacity">
+                    <Trash2 size={14}/>
                 </button>
             </div>
-
-            {/* QR Image */}
-            <div className="flex flex-col items-center justify-center p-6 gap-4 flex-1">
+            
+            <div className="p-6 flex flex-col items-center gap-4 flex-1">
                 {entry.isLoading ? (
-                    <div className="w-[150px] h-[150px] rounded-xl bg-stone-100 animate-pulse" />
+                    <div className="w-40 h-40 bg-stone-100 animate-pulse rounded-xl" />
                 ) : entry.canvasDataUrl ? (
-                    <img
-                        src={entry.canvasDataUrl}
-                        alt={`QR Table ${entry.tableId}`}
-                        className="w-[150px] h-[150px] rounded-xl"
-                    />
+                    <img src={entry.canvasDataUrl} alt="QR" className="w-40 h-40 rounded-xl" />
                 ) : (
-                    <div className="w-[150px] h-[150px] rounded-xl bg-stone-100 flex items-center justify-center">
-                        <QrCode size={40} className="text-stone-300" />
+                    <div className="w-40 h-40 bg-stone-50 border-2 border-dashed border-stone-100 rounded-xl flex items-center justify-center text-stone-200">
+                        <QrCode size={48} />
                     </div>
                 )}
-
-                {entry.error && (
-                    <p className="text-red-500 text-[10px] text-center font-medium leading-tight">
-                        {entry.error}
+                
+                <div className="text-center w-full px-2">
+                    <p className="font-bold text-stone-800 uppercase tracking-tight mb-1">
+                        {entry.customerName || "No Name"}
                     </p>
-                )}
-
-                {entry.session && (
-                    <div className="text-center">
-                         <p className="text-[11px] font-bold text-stone-700">{entry.customerName}</p>
-                         <p className="text-[9px] text-stone-400 break-all leading-relaxed px-2">
+                    
+                    {/* Tampilkan URL di sini agar bisa diklik untuk testing */}
+                    {entry.session?.qrUrl ? (
+                        <a 
+                            href={entry.session.qrUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-[9px] text-blue-500 hover:text-blue-700 underline break-all leading-relaxed block"
+                            title="Klik untuk membuka menu meja ini"
+                        >
                             {entry.session.qrUrl}
-                        </p>
-                    </div>
-                )}
+                        </a>
+                    ) : (
+                        <p className="text-[10px] text-stone-400 mt-1">No Active Session</p>
+                    )}
+                </div>
             </div>
 
-            {/* Input Nama Pelanggan */}
-            <div className="px-4 pb-3">
-                <input
-                    type="text"
-                    placeholder="Nama Pelanggan..."
-                    value={entry.customerName}
-                    onChange={(e) => onNameChange(entry.tableId, e.target.value)}
-                    disabled={!!entry.session || entry.isLoading}
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#8C6D56]/30 bg-stone-50 disabled:bg-stone-100 disabled:text-stone-400 transition-all"
-                />
-            </div>
-
-            {/* Actions */}
-            <div className="px-4 pb-4 flex gap-2">
-                <button
+            <div className="p-4 bg-stone-50 border-t border-stone-100 flex gap-2">
+                <button 
                     onClick={() => onGenerate(entry.tableId, entry.customerName)}
-                    disabled={entry.isLoading}
-                    className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-[#8C6D56] text-[#8C6D56] text-sm font-medium hover:bg-[#8C6D56]/5 transition-colors disabled:opacity-50"
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-[#8C6D56] text-[#8C6D56] rounded-xl text-xs font-bold hover:bg-[#8C6D56]/5 transition-all"
                 >
-                    <RefreshCw size={14} className={entry.isLoading ? "animate-spin" : ""} />
-                    {entry.session ? "Regenerate" : "Generate"}
+                    <RefreshCw size={14} className={entry.isLoading ? "animate-spin" : ""} /> REGENERATE
                 </button>
-
                 {entry.canvasDataUrl && (
-                    <button
-                        onClick={handleDownload}
-                        className="flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-[#8C6D56] text-white text-sm font-medium hover:bg-[#8C6D56]/90 transition-colors"
-                    >
+                    <button onClick={handleDownload} className="px-4 py-2.5 bg-primary-20 text-white rounded-xl hover:bg-[#8C6D56]/90 shadow-md shadow-[#8C6D56]/20 transition-all">
                         <Download size={14} />
-                        PNG
                     </button>
                 )}
             </div>
@@ -137,197 +100,161 @@ function QRCard({
     );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// Page Component 
 
 export default function TableManagementPage() {
-    const [tables, setTables] = useState<TableEntry[]>([
-        { tableId: 1, customerName: "", session: null, isLoading: false, error: null, canvasDataUrl: null },
-        { tableId: 2, customerName: "", session: null, isLoading: false, error: null, canvasDataUrl: null },
-        { tableId: 3, customerName: "", session: null, isLoading: false, error: null, canvasDataUrl: null },
-    ]);
-    const [newTableId, setNewTableId] = useState("");
-    const [addError, setAddError]     = useState("");
+    const [tables, setTables] = useState<TableEntry[]>([]);
+    const [selectedTableId, setSelectedTableId] = useState<string>("");
+    const [customerName, setCustomerName] = useState("");
+    const [isFetching, setIsFetching] = useState(true);
 
-    // Update state nama saat Admin mengetik
-    const handleNameChange = (tableId: number, name: string) => {
-        setTables((prev) =>
-            prev.map((t) =>
-                t.tableId === tableId ? { ...t, customerName: name, error: null } : t
-            )
-        );
-    };
+    const [validTables, setValidTables] = useState<{id: number, number: number}[]>([]);
 
-    // Generate session for one table
-    const handleGenerate = useCallback(async (tableId: number, customerName: string) => {
-        if (!customerName.trim()) {
-            setTables((prev) =>
-                prev.map((t) =>
-                    t.tableId === tableId ? { ...t, error: "Nama pelanggan wajib diisi" } : t
-                )
-            );
-            return;
-        }
+    const loadSessions = useCallback(async () => {
+        setIsFetching(true);
+        try {            
+            const [masterTables, sessions] = await Promise.all([
+                import('@/lib/tableSessionService').then(m => m.getMasterTables()),
+                getTableSessions()
+            ]);
 
-        setTables((prev) =>
-            prev.map((t) =>
-                t.tableId === tableId ? { ...t, isLoading: true, error: null } : t
-            )
-        );
+            setValidTables(masterTables); 
 
-        try {
-            const session       = await generateTableSession(tableId, customerName);
-            const canvasDataUrl = await renderQRToDataUrl(session.qrUrl);
+            const uniqueSessionsMap = new Map<number, TableSession>();
 
-            setTables((prev) =>
-                prev.map((t) =>
-                    t.tableId === tableId
-                        ? { ...t, session, canvasDataUrl, isLoading: false }
-                        : t
-                )
-            );
-        } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : "Gagal generate session";
-            setTables((prev) =>
-                prev.map((t) =>
-                    t.tableId === tableId
-                        ? { ...t, error: message, isLoading: false }
-                        : t
-                )
-            );
+            sessions.forEach(s => {
+                if (s.tableId && (s as any).isActive) {
+                    uniqueSessionsMap.set(s.tableId, s);
+                }
+            });
+
+            const activeSessions = Array.from(uniqueSessionsMap.values());
+
+            const tableEntries: TableEntry[] = await Promise.all(activeSessions.map(async (s) => ({
+                tableId: s.tableId,
+                customerName: (s as any).customerName || "Customer",
+                session: s,
+                isLoading: false,
+                error: null,
+                canvasDataUrl: await renderQRToDataUrl(s.qrUrl)
+            })));
+            
+            setTables(tableEntries);
+        } catch (err: any) {
+            console.error("Failed to load data", err);
+        } finally {
+            setIsFetching(false);
         }
     }, []);
 
-    // Generate ALL yang sudah ada namanya
-    const handleGenerateAll = useCallback(async () => {
-        const targetTables = tables.filter(t => t.customerName.trim() && !t.session);
-        for (const table of targetTables) {
-            await handleGenerate(table.tableId, table.customerName);
+    useEffect(() => { loadSessions(); }, [loadSessions]);
+
+    const handleGenerate = async (id: number, name: string) => {
+        if (!id) return alert("Error: ID Meja tidak valid dari database!"); 
+        if (!name) return alert("Nama pelanggan harus diisi!");
+        
+        setTables(prev => prev.map(t => t.tableId === id ? { ...t, isLoading: true } : t));
+        
+        try {
+            const session = await generateTableSession(id, name);
+            const qr = await renderQRToDataUrl(session.qrUrl);
+            setTables(prev => prev.map(t => t.tableId === id ? { 
+                ...t, session, canvasDataUrl: qr, isLoading: false, customerName: name 
+            } : t));
+        } catch (err: any) {
+            console.error("Generate error:", err);
+            const errorMsg = err.response?.data?.message || err.message || "Unknown error";
+            alert(`Gagal generate QR Meja ${id}:\n\n${errorMsg}`);
+            
+            setTables(prev => prev.map(t => t.tableId === id ? { ...t, isLoading: false } : t));
         }
-    }, [tables, handleGenerate]);
+    };
 
     const handleAddTable = () => {
-        const id = parseInt(newTableId, 10);
-        if (isNaN(id) || id <= 0) {
-            setAddError("Masukkan nomor meja yang valid");
-            return;
-        }
-        if (tables.some((t) => t.tableId === id)) {
-            setAddError(`Meja ${id} sudah ada`);
-            return;
-        }
-        setTables((prev) => [
-            ...prev,
-            { tableId: id, customerName: "", session: null, isLoading: false, error: null, canvasDataUrl: null },
-        ]);
-        setNewTableId("");
-        setAddError("");
-    };
+        const id = parseInt(selectedTableId);
+        if (!id || !customerName) return alert("Pilih nomor meja dan isi nama!");
+        if (tables.find(t => t.tableId === id)) return alert("Meja sudah aktif!");
 
-    const handleRemove = (tableId: number) => {
-        setTables((prev) => prev.filter((t) => t.tableId !== tableId));
+        const newEntry: TableEntry = {
+            tableId: id,
+            customerName: customerName,
+            session: null,
+            isLoading: false,
+            error: null,
+            canvasDataUrl: null
+        };
+        
+        setTables(prev => [...prev, newEntry]);
+        handleGenerate(id, customerName);
+        setCustomerName("");
+        setSelectedTableId("");
     };
-
-    const handleDownloadAll = async () => {
-        const generated = tables.filter((t) => t.canvasDataUrl && t.session);
-        for (const t of generated) {
-            const link = document.createElement("a");
-            link.href = t.canvasDataUrl!;
-            link.download = `qr-table-${t.tableId}-${t.customerName}.png`;
-            link.click();
-            await new Promise((r) => setTimeout(r, 300));
-        }
-    };
-
-    const generatedCount = tables.filter((t) => t.canvasDataUrl).length;
 
     return (
-        <div className="min-h-screen bg-[#FAF7F2]">
-            {/* Header */}
-            <header className="bg-white border-b border-stone-200 px-6 py-4 flex items-center gap-3">
-                <span className="flex items-center justify-center w-9 h-9 rounded-full bg-[#8C6D56] text-white">
-                    <Utensils size={16} />
-                </span>
-                <div>
-                    <h1 className="font-bold text-stone-800 text-lg leading-none">
-                        Table Sessions
-                    </h1>
-                    <p className="text-xs text-stone-400 mt-0.5">
-                        Generate & download QR code untuk setiap meja
-                    </p>
-                </div>
+        <div className="p-6 sm:p-10 space-y-10 w-full max-w-6xl mx-auto">
+            <header className="flex flex-col gap-1">
+                <h1 className="text-3xl font-bold text-stone-800">Generate QR Table</h1>
+                <p className="text-sm text-stone-500">Kelola sesi aktif dan cetak QR Code untuk pelanggan di meja.</p>
             </header>
 
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
-                {/* Toolbar */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-                    <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="number"
-                                min={1}
-                                value={newTableId}
-                                onChange={(e) => { setNewTableId(e.target.value); setAddError(""); }}
-                                onKeyDown={(e) => e.key === "Enter" && handleAddTable()}
-                                placeholder="Nomor meja baru..."
-                                className="w-44 px-3 py-2 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#8C6D56]/30 bg-white"
-                            />
-                            <button
-                                onClick={handleAddTable}
-                                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#8C6D56] text-white text-sm font-medium hover:bg-[#8C6D56]/90 transition-colors"
-                            >
-                                <Plus size={15} /> Tambah
-                            </button>
-                        </div>
-                        {addError && <p className="text-red-500 text-xs">{addError}</p>}
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={handleGenerateAll}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[#8C6D56] text-[#8C6D56] text-sm font-medium hover:bg-[#8C6D56]/5 transition-colors"
-                        >
-                            <RefreshCw size={14} />
-                            Generate Semua
-                        </button>
-                        {generatedCount > 0 && (
-                            <button
-                                onClick={handleDownloadAll}
-                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#8C6D56] text-white text-sm font-medium hover:bg-[#8C6D56]/90 transition-colors"
-                            >
-                                <Download size={14} />
-                                Download Semua ({generatedCount})
-                            </button>
-                        )}
-                    </div>
+            {/* Toolbar */}
+            <div className="bg-white p-6 rounded-2xl border border-stone-100 shadow-sm flex flex-col md:flex-row gap-4 items-end">
+                <div className="flex-1 space-y-2 w-full">
+                    <label className="text-[10px] font-bold text-stone-400 tracking-widest">PILIH NOMOR MEJA</label>
+                    <select 
+                        value={selectedTableId}
+                        onChange={(e) => setSelectedTableId(e.target.value)}
+                        className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:ring-2 focus:ring-[#8C6D56]/20 outline-none"
+                    >
+                        <option value="">Pilih Nomor Meja...</option>
+                        {/* Loop dropdown menggunakan data meja yang valid dari backend */}
+                        {validTables.map((table) => (
+                            <option key={table.id} value={table.id}>
+                                Meja {table.number}
+                            </option>
+                        ))}
+                    </select>
                 </div>
-
-                {/* Grid */}
-                {tables.length === 0 ? (
-                    <div className="text-center py-24 text-stone-400">
-                        <QrCode size={40} className="mx-auto mb-3 opacity-30" />
-                        <p className="text-sm">Belum ada meja. Tambah nomor meja dulu.</p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {tables
-                            .sort((a, b) => a.tableId - b.tableId)
-                            .map((entry) => (
-                                <QRCard
-                                    key={entry.tableId}
-                                    entry={entry}
-                                    onGenerate={handleGenerate}
-                                    onRemove={handleRemove}
-                                    onNameChange={handleNameChange}
-                                />
-                            ))}
-                    </div>
-                )}
-
-                <p className="text-center text-xs text-stone-400 mt-10">
-                    QR code berisi link menu dengan session token meja.
-                    Token bersifat sementara — regenerate jika sesi berakhir.
-                </p>
+                <div className="flex-[2] space-y-2 w-full">
+                    <label className="text-[10px] font-bold text-stone-400 tracking-widest">NAMA PELANGGAN</label>
+                    <input 
+                        type="text" 
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        placeholder="Masukkan nama untuk sesi ini..."
+                        className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:ring-2 focus:ring-[#8C6D56]/20 outline-none"
+                    />
+                </div>
+                <button 
+                    onClick={handleAddTable}
+                    className="bg-primary-20 text-white px-8 py-3.5 rounded-xl font-bold text-sm hover:bg-[#8C6D56]/90 transition-all flex items-center gap-2 shrink-0 shadow-lg shadow-[#8C6D56]/20"
+                >
+                    <Plus size={18} /> TAMBAH MEJA
+                </button>
             </div>
+
+            {/* Grid */}
+            {isFetching ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 opacity-50 pointer-events-none">
+                    {[1,2,3].map(i => <div key={i} className="h-80 bg-stone-100 animate-pulse rounded-2xl" />)}
+                </div>
+            ) : tables.length === 0 ? (
+                <div className="py-20 flex flex-col items-center justify-center text-primary-20 border-2 border-dashed border-stone-100 rounded-3xl">
+                    <QrCode size={64} strokeWidth={1} />
+                    <p className="mt-4 font-medium">Belum ada meja aktif. Silakan tambah di atas.</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {tables.sort((a, b) => a.tableId - b.tableId).map((entry) => (
+                        <QRCard 
+                            key={entry.tableId} 
+                            entry={entry} 
+                            onGenerate={handleGenerate}
+                            onRemove={(id) => setTables(prev => prev.filter(t => t.tableId !== id))}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

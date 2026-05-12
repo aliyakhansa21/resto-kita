@@ -1,8 +1,47 @@
 import api from "@/lib/api";
 import type { ApiTableSessionResponse, TableSession } from "@/types";
 
-// Generate token table session baru dari backend
-// POST /api/table-sessions/generate
+
+export async function getMasterTables(): Promise<{ id: number; number: number }[]> {
+    try {
+        const { data } = await api.get<{ data: { id: number; number: number }[] }>("/admin/tables");
+        return data.data;
+    } catch (error) {
+        console.warn("Gagal mengambil master meja (mungkin endpoint belum ada), menggunakan data dummy sementara.");
+        return Array.from({ length: 10 }, (_, i) => ({ id: i + 1, number: i + 1 }));
+    }
+}
+
+
+export async function getTableSessions(): Promise<TableSession[]> {
+    let allData: any[] = [];
+    let currentPage = 1;
+    let lastPage = 1;
+
+    do {
+        const { data } = await api.get(`/admin/table-sessions?page=${currentPage}`);
+        allData = [...allData, ...data.data];
+        lastPage = data.meta.last_page;
+        currentPage++;
+    } while (currentPage <= lastPage);
+    
+    const baseUrl = typeof window !== "undefined"
+            ? window.location.origin
+            : "";
+
+    return allData.map(item => {
+        const resolvedTableId = item.table?.number || item.table?.id || item.table_id;
+
+        return {
+            token: item.token,
+            tableId: resolvedTableId, 
+            seatedAt: item.seated_at,
+            customerName: item.customer_name,
+            qrUrl: `${baseUrl}/menu?token=${item.token}&table=${resolvedTableId}`,
+            isActive: item.is_active === true || item.status === 'active'
+        };
+    });
+}
 
 export async function generateTableSession(tableId: number, customerName: string): Promise<TableSession> {
     const { data } = await api.post<ApiTableSessionResponse>(
@@ -13,10 +52,9 @@ export async function generateTableSession(tableId: number, customerName: string
         }
     );
 
-    const baseUrl =
-        typeof window !== "undefined"
+    const baseUrl = typeof window !== "undefined"
             ? window.location.origin
-            : process.env.NEXT_PUBLIC_BASE_URL ?? "";
+            : "";
 
     return {
         token: data.data.token,
