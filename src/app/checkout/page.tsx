@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useCheckout } from "@/hooks/useCheckout";
 import { useOrders } from "@/hooks/useOrders";
@@ -13,7 +14,7 @@ import { Footer } from "@/app/components/shared/Footer";
 const fmt = (val: number): string =>
   "Rp" + val.toLocaleString("id-ID").replace(/,/g, ".");
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -39,7 +40,7 @@ export default function CheckoutPage() {
     payment,
   } = useCheckout(token, tableNumber);
 
-  //  Non-Cash: sedang proses Midtrans 
+  // Non-Cash: sedang proses Midtrans 
   // Tampil saat: creating snap token, waiting (popup terbuka), polling status
   const isNonCashProcessing =
     completedOrder?.paymentMethod === "non_cash" &&
@@ -74,7 +75,7 @@ export default function CheckoutPage() {
     );
   }
 
-  //  Order Detail 
+  // Order Detail 
   // Tampil saat:
   // - Cash: langsung setelah confirm (completedOrder ada, paymentMethod = cash)
   // - Non-Cash: setelah polling konfirmasi "paid"
@@ -116,7 +117,6 @@ export default function CheckoutPage() {
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-7 items-start">
-
           {/* ── Left ── */}
           <div className="flex flex-col gap-6">
             <CheckoutForm form={form} setForm={setForm} errors={formErrors} />
@@ -232,5 +232,17 @@ export default function CheckoutPage() {
       </main>
       <Footer />
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-secondary-DEFAULT/20 text-primary-50">
+        Memuat halaman checkout...
+      </div>
+    }>
+      <CheckoutContent />
+    </Suspense>
   );
 }

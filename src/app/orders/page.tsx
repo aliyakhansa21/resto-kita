@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useOrders } from "@/hooks/useOrders";
 import OrderCard from "@/app/components/features/orders/OrderCard";
@@ -8,7 +9,7 @@ import { Footer } from "@/app/components/shared/Footer";
 
 const fmt = (val: number): string => "Rp" + val.toLocaleString("id-ID").replace(/,/g, ".");
 
-export default function OrdersPage() {
+function OrdersContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
 
@@ -19,10 +20,11 @@ export default function OrdersPage() {
 
     return (
         <div className="min-h-screen flex flex-col bg-[#8A5E3D0D]">
+            {/* Prop cartCount dan onCartClick ditambahkan agar terhindar dari TypeScript error */}
             <Navbar 
                 tableNumber={tableNumber} 
                 cartCount={0} 
-                onCartClick={() => console.log("Cart clicked from Orders page")} 
+                onCartClick={() => {}} 
             />
 
             <main className="flex-1 max-w-2xl mx-auto w-full px-6 py-24">
@@ -118,5 +120,17 @@ export default function OrdersPage() {
 
             <Footer />
         </div>
+    );
+}
+
+export default function OrdersPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-[#8A5E3D0D] text-primary-50">
+                Memuat pesanan...
+            </div>
+        }>
+            <OrdersContent />
+        </Suspense>
     );
 }
