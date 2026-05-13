@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDown, Utensils, ShoppingBag } from "lucide-react";
 import { Navbar }          from "@/app/components/shared/Navbar";
@@ -16,7 +16,7 @@ import { useCart }         from "@/context/CartContext";
 import type { MenuItem }   from "@/types";
 
 
-export default function MenuPage() {
+function MenuContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -305,5 +305,17 @@ export default function MenuPage() {
             tableNumber={tableNumber}
         />
         </>
+    );
+}
+
+export default function MenuPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-[#8A5E3D0D] text-primary-50">
+                Memuat menu...
+            </div>
+        }>
+            <MenuContent />
+        </Suspense>
     );
 }
