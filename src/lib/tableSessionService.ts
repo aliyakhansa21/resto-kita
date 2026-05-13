@@ -37,7 +37,7 @@ export async function getTableSessions(): Promise<TableSession[]> {
             tableId: resolvedTableId, 
             seatedAt: item.seated_at,
             customerName: item.customer_name,
-            qrUrl: `${baseUrl}/menu?token=${item.token}&table=${resolvedTableId}`,
+            qrUrl: `${baseUrl}/?token=${item.token}&table=${resolvedTableId}`,
             isActive: item.is_active === true || item.status === 'active'
         };
     });
@@ -60,6 +60,6 @@ export async function generateTableSession(tableId: number, customerName: string
         token: data.data.token,
         tableId: data.data.table_id,
         seatedAt: data.data.seated_at,
-        qrUrl: `${baseUrl}/menu?token=${data.data.token}&table=${data.data.table_id}`,
+        qrUrl: `${baseUrl}/?token=${data.data.token}&table=${data.data.table_id}`,
     };
 }
