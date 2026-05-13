@@ -1,4 +1,3 @@
-// src/app/orders/page.tsx
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
@@ -20,7 +19,11 @@ export default function OrdersPage() {
 
     return (
         <div className="min-h-screen flex flex-col bg-[#8A5E3D0D]">
-            <Navbar tableNumber={tableNumber} />
+            <Navbar 
+                tableNumber={tableNumber} 
+                cartCount={0} 
+                onCartClick={() => console.log("Cart clicked from Orders page")} 
+            />
 
             <main className="flex-1 max-w-2xl mx-auto w-full px-6 py-24">
                 <h1 className="text-h2 text-primary-50 mb-1">Your Orders</h1>
