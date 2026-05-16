@@ -1,0 +1,93 @@
+import { useState, useEffect, useCallback } from "react";
+import api from "@/lib/api";
+
+export interface Employee {
+    id: number;
+    full_name: string;
+    telephone: string;
+    username: string;
+    email: string;
+}
+
+export function useEmployees() {
+    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // GET: Fetch all employees
+    const fetchEmployees = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await api.get("/admin/employees");
+            setEmployees(response.data.data || []);
+        } catch (error) {
+            console.error("Failed to fetch employees:", error);
+            alert("Gagal mengambil data karyawan dari server.");
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    // Load data on mount
+    useEffect(() => {
+        fetchEmployees();
+    }, [fetchEmployees]);
+
+    // POST: Create new employee
+    const addEmployee = async (payload: any) => {
+        setIsSubmitting(true);
+        try {
+            await api.post("/admin/employees", payload);
+            await fetchEmployees(); // Refresh data
+            return true; // Return true jika sukses
+        } catch (error: any) {
+            console.error("Failed to add employee:", error);
+            alert(error.response?.data?.message || "Gagal menambah data karyawan.");
+            return false;
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    // PUT: Update existing employee
+    const editEmployee = async (id: number, payload: any) => {
+        setIsSubmitting(true);
+        try {
+            await api.put(`/admin/employees/${id}`, payload);
+            await fetchEmployees(); // Refresh data
+            return true;
+        } catch (error: any) {
+            console.error("Failed to update employee:", error);
+            alert(error.response?.data?.message || "Gagal memperbarui data karyawan.");
+            return false;
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    // DELETE: Remove employee
+    const removeEmployee = async (id: number) => {
+        setIsLoading(true);
+        try {
+            await api.delete(`/admin/employees/${id}`);
+            await fetchEmployees(); // Refresh data
+            return true;
+        } catch (error: any) {
+            console.error("Failed to delete employee:", error);
+            alert(error.response?.data?.message || "Gagal menghapus data karyawan.");
+            return false;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return {
+        employees,
+        isLoading,
+        isSubmitting,
+        addEmployee,
+        editEmployee,
+        removeEmployee,
+        refresh: fetchEmployees // Expose jika butuh manual refresh dari UI
+    };
+}
