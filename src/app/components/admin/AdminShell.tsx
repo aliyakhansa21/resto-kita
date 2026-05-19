@@ -18,7 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const menuUtama = [
-    { href: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/admin/pesanan", icon: ClipboardList, label: "Daftar Pesanan" },
     { href: "/admin/payment-confirmation", icon: Banknote, label: "Konfirmasi Pembayaran" },
     { href: "/admin/menu", icon: UtensilsCrossed, label: "Daftar Menu" },
@@ -35,7 +35,10 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     const pathname = usePathname();
 
     const NavItem = ({ href, icon: Icon, label }: { href: string; icon: React.ElementType; label: string }) => {
-        const active = pathname === href || pathname.startsWith(href + "/");
+        const active = href === "/admin" 
+            ? pathname === href 
+            : pathname === href || pathname.startsWith(href + "/");
+
         return (
             <Link href={href}>
                 <div
