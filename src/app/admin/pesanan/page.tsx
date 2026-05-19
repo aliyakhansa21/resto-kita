@@ -68,11 +68,15 @@ export default function PesananPage() {
   const handleExport = () => {
     if (!orders || orders.length === 0) return;
     const headers = ["No", "Kode Pesanan", "Pelanggan", "Total", "Status", "No Meja", "Pembayaran", "Catatan", "Dibuat Pada"];
-    const rows = orders.map((order, index) => {
-      const total = order.order_items?.reduce((acc, curr) => {
-        const price = curr?.item?.price ? parseInt(curr.item.price) : 0;
-        return acc + price * (curr?.amount || 0);
+    const rows = orders.map((order: any, index: number) => {
+      
+      const total = order.order_items?.reduce((acc: number, curr: any) => {
+        const rawPrice = curr?.item?.price ? String(curr.item.price).replace(/[^0-9]/g, "") : "0";
+        const price = parseFloat(curr?.item?.price || "0");
+        const amount = Number(curr?.amount) || 0;
+        return acc + (price * amount);
       }, 0) || 0;
+
       return [
         index + 1,
         order.order_id || "-",
@@ -157,7 +161,7 @@ export default function PesananPage() {
             </thead>
             <tbody className="text-sm text-gray-700">
 
-              {/* Loading State — skeleton rows */}
+              {/* Loading State */}
               {isLoading &&
                 [...Array(5)].map((_, i) => (
                   <tr key={i} className="border-b border-gray-50 animate-pulse">
@@ -201,16 +205,18 @@ export default function PesananPage() {
               {/* Data Rows */}
               {!isLoading &&
                 !isError &&
-                paginatedOrders.map((order, index) => {
-                  const total =
-                    order.order_items?.reduce((acc, curr) => {
-                      const price = curr?.item?.price ? parseInt(curr.item.price) : 0;
-                      return acc + price * (curr?.amount || 0);
-                    }, 0) || 0;
+                paginatedOrders.map((order: any, index: number) => {
+                  
+                  const total = order.order_items?.reduce((acc: number, curr: any) => {
+                    const rawPrice = curr?.item?.price ? String(curr.item.price).replace(/[^0-9]/g, "") : "0";
+                    const price = parseFloat(curr?.item?.price || "0");
+                    const amount = Number(curr?.amount) || 0;
+                    return acc + (price * amount);
+                  }, 0) || 0;
 
                   return (
                     <tr
-                      key={order.id}
+                      key={order.id || index}
                       className="border-b border-gray-50 last:border-0 hover:bg-gray-50/60 transition-colors"
                     >
                       {/* No */}
