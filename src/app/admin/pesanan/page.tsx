@@ -35,6 +35,17 @@ const getStatusLabel = (status: string) => {
   }
 };
 
+const formatPaymentMethod = (method: string) => {
+  if (!method) return "-";
+  
+  if (method.toLowerCase() === "qris") return "QRIS";
+
+  return method
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+};
+
 export default function PesananPage() {
   const { data: orders, isLoading, isError } = useAdminOrders();
   const [entriesPerPage, setEntriesPerPage] = useState(10);
@@ -255,7 +266,7 @@ export default function PesananPage() {
 
                       {/* Pembayaran */}
                       <td className="py-4 px-5 text-gray-600 text-center">
-                        {order.payment_method || "-"}
+                        {formatPaymentMethod(order.payment_method) || "-"}
                       </td>
 
                       {/* Catatan */}
