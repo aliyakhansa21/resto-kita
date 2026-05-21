@@ -22,7 +22,6 @@ export function useEmployees() {
             setEmployees(response.data.data || []);
         } catch (error) {
             console.error("Failed to fetch employees:", error);
-            alert("Gagal mengambil data karyawan dari server.");
         } finally {
             setIsLoading(false);
         }
@@ -38,12 +37,14 @@ export function useEmployees() {
         setIsSubmitting(true);
         try {
             await api.post("/admin/employees", payload);
-            await fetchEmployees(); // Refresh data
-            return true; // Return true jika sukses
+            await fetchEmployees();
+            return { success: true };
         } catch (error: any) {
             console.error("Failed to add employee:", error);
-            alert(error.response?.data?.message || "Gagal menambah data karyawan.");
-            return false;
+            return { 
+                success: false, 
+                message: error.response?.data?.message || "Gagal menambah data karyawan." 
+            };
         } finally {
             setIsSubmitting(false);
         }
@@ -54,12 +55,14 @@ export function useEmployees() {
         setIsSubmitting(true);
         try {
             await api.put(`/admin/employees/${id}`, payload);
-            await fetchEmployees(); // Refresh data
-            return true;
+            await fetchEmployees();
+            return { success: true };
         } catch (error: any) {
             console.error("Failed to update employee:", error);
-            alert(error.response?.data?.message || "Gagal memperbarui data karyawan.");
-            return false;
+            return { 
+                success: false, 
+                message: error.response?.data?.message || "Gagal memperbarui data karyawan." 
+            };
         } finally {
             setIsSubmitting(false);
         }
@@ -70,14 +73,36 @@ export function useEmployees() {
         setIsLoading(true);
         try {
             await api.delete(`/admin/employees/${id}`);
-            await fetchEmployees(); // Refresh data
-            return true;
+            await fetchEmployees();
+            return { success: true };
         } catch (error: any) {
             console.error("Failed to delete employee:", error);
-            alert(error.response?.data?.message || "Gagal menghapus data karyawan.");
-            return false;
+            return { 
+                success: false, 
+                message: error.response?.data?.message || "Gagal menghapus data karyawan." 
+            };
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    // POST: Change Password
+    const changePassword = async (id: number, payload: any) => {
+        setIsSubmitting(true);
+        try {
+            const response = await api.post(`/admin/employees/${id}/change-password`, payload);
+            return { 
+                success: true, 
+                message: response.data.message || "Password berhasil diperbarui." 
+            };
+        } catch (error: any) {
+            console.error("Failed to change password:", error);
+            return { 
+                success: false, 
+                message: error.response?.data?.message || "Gagal memperbarui password." 
+            };
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -88,6 +113,7 @@ export function useEmployees() {
         addEmployee,
         editEmployee,
         removeEmployee,
-        refresh: fetchEmployees // Expose jika butuh manual refresh dari UI
+        changePassword, 
+        refresh: fetchEmployees
     };
 }
