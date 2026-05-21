@@ -1,313 +1,110 @@
 "use client";
 
 import { useState } from "react";
-import { Users, Pencil, Trash2, ArrowLeft, Shield, RefreshCw } from "lucide-react";
 import { useEmployees, type Employee } from "@/hooks/useEmployees";
+import NotificationModal from "../components/NotificationModal";
+import DeleteConfirmModal from "../components/DeleteConfirmModal"; 
+import EmployeeList from "../components/EmployeeList";
+import EmployeeForm from "../components/EmployeeForm";
+import EmployeePasswordForm from "../components/EmployeePasswordForm";
 
-type ViewState = "LIST" | "ADD" | "EDIT";
+type ViewState = "LIST" | "ADD" | "EDIT" | "RESET_PASSWORD";
 
 export default function EmployeeManagementPage() {
-    const { 
-        employees, 
-        isLoading, 
-        isSubmitting, 
-        addEmployee, 
-        editEmployee, 
-        removeEmployee 
-    } = useEmployees();
+    const { employees, isLoading, isSubmitting, addEmployee, editEmployee, removeEmployee, changePassword } = useEmployees();
 
     const [view, setView] = useState<ViewState>("LIST");
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
-
-    // Form states
-    const [formData, setFormData] = useState({
-        fullName: "",
-        username: "",
-        email: "",
-        phone: "",
-        password: ""
+    const [modal, setModal] = useState<{ isOpen: boolean; type: "success" | "error"; title: string; message: string; redirectToListOnClose?: boolean; }>({
+        isOpen: false, type: "success", title: "", message: "", redirectToListOnClose: false
     });
 
-    const handleOpenAdd = () => {
-        setFormData({ fullName: "", username: "", email: "", phone: "", password: "" });
-        setView("ADD");
+    const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; id: number | null; name: string }>({
+        isOpen: false, id: null, name: ""
+    });
+
+    const handleOpenAdd = () => { setSelectedEmployee(null); setView("ADD"); };
+    const handleOpenEdit = (employee: Employee) => { setSelectedEmployee(employee); setView("EDIT"); };
+    const handleOpenResetPassword = (employee: Employee) => { setSelectedEmployee(employee); setView("RESET_PASSWORD"); };
+
+    const handleRequestDelete = (id: number, name: string) => {
+        setDeleteModal({ isOpen: true, id, name });
     };
 
-    const handleOpenEdit = (employee: Employee) => {
-        setSelectedEmployee(employee);
-        setFormData({
-            fullName: employee.full_name,
-            username: employee.username,
-            email: employee.email,
-            phone: employee.telephone ? employee.telephone.replace("+62", "").trim() : "",
-            password: ""
-        });
-        setView("EDIT");
-    };
-
-    const handleDelete = async (id: number) => {
-        if (!confirm("Apakah Anda yakin ingin menghapus karyawan ini?")) return;
+    const handleExecuteDelete = async () => {
+        if (!deleteModal.id) return;
         
-        const isSuccess = await removeEmployee(id);
-        if (isSuccess && view === "EDIT") {
-            setView("LIST"); // Kembali ke list jika menghapus dari tampilan Edit
+        const idToDelete = deleteModal.id;
+        setDeleteModal({ isOpen: false, id: null, name: "" });
+
+        const result = await removeEmployee(idToDelete);
+        if (result.success) {
+            setModal({ isOpen: true, type: "success", title: "Berhasil!", message: "Data karyawan berhasil dihapus.", redirectToListOnClose: true });
+        } else {
+            setModal({ isOpen: true, type: "error", title: "Gagal", message: result.message || "Terjadi kesalahan.", redirectToListOnClose: false });
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleFormSubmit = async (formData: any) => {
         const formattedPhone = `+62 ${formData.phone}`;
-        let isSuccess = false;
-        
+        let result;
         if (view === "ADD") {
-            isSuccess = await addEmployee({
-                full_name: formData.fullName,
-                username: formData.username,
-                email: formData.email,
-                password: formData.password,
-                telephone: formattedPhone
-            });
+            result = await addEmployee({ ...formData, full_name: formData.fullName, telephone: formattedPhone });
         } else if (view === "EDIT" && selectedEmployee) {
-            isSuccess = await editEmployee(selectedEmployee.id, {
-                full_name: formData.fullName,
-                username: formData.username,
-                email: formData.email,
-                telephone: formattedPhone
-            });
+            result = await editEmployee(selectedEmployee.id, { full_name: formData.fullName, username: formData.username, email: formData.email, telephone: formattedPhone });
         }
         
-        // Hanya pindah view ke LIST kalau request API-nya sukses
-        if (isSuccess) {
-            setView("LIST");
+        if (result?.success) {
+            setModal({ isOpen: true, type: "success", title: "Berhasil!", message: "Data karyawan berhasil disimpan.", redirectToListOnClose: true });
+        } else if (result) {
+            setModal({ isOpen: true, type: "error", title: "Gagal", message: result.message || "Periksa kembali input data Anda.", redirectToListOnClose: false });
         }
     };
 
-    // RENDER: LIST VIEW 
-    if (view === "LIST") {
-        return (
-            <div className="p-6 sm:p-10 space-y-8 w-full max-w-6xl mx-auto">
-                {/* Header Row */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div>
-                        <h1 className="text-3xl font-bold text-stone-800 tracking-tight">Manajemen Karyawan</h1>
-                        <p className="text-sm text-stone-500 mt-1">Kelola pengaturan tim dapur dan staf layanan pelanggan</p>
-                    </div>
-                    <button 
-                        onClick={handleOpenAdd}
-                        className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-30 shadow-sm transition-all"
-                    >
-                        <Users size={18} /> + Tambah Karyawan Baru
-                    </button>
-                </div>
+    const handlePasswordSubmit = async (resetData: any) => {
+        if (resetData.newPassword !== resetData.confirmPassword) {
+            setModal({ isOpen: true, type: "error", title: "Input Tidak Valid", message: "Konfirmasi password baru tidak cocok.", redirectToListOnClose: false });
+            return;
+        }
 
-                {/* Info Card */}
-                <div className="bg-white px-6 py-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col w-64">
-                    <span className="text-[10px] font-bold text-[#51443C] tracking-wider mb-2">TOTAL KARYAWAN</span>
-                    <div className="flex items-baseline gap-2">
-                        <span className="text-4xl font-bold text-stone-800 leading-none">
-                            {isLoading ? "..." : employees.length}
-                        </span>
-                        {!isLoading && employees.length > 0 && (
-                            <span className="text-[#4A5D23] text-sm font-bold mb-1">+3~</span>
-                        )}
-                    </div>
-                </div>
+        const result = await changePassword(selectedEmployee!.id, {
+            current_password: resetData.currentPassword,
+            new_password: resetData.newPassword,
+            new_password_confirmation: resetData.confirmPassword
+        });
 
-                {/* Table Component */}
-                <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden relative">
-                    {isLoading && (
-                        <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center z-10">
-                            <RefreshCw className="animate-spin text-primary" size={32} />
-                        </div>
-                    )}
-                    
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left">
-                            <thead className="text-[11px] text-[#51443C] font-bold uppercase tracking-wider border-b border-stone-100 bg-stone-50/50">
-                                <tr>
-                                    <th className="px-6 py-5">NO</th>
-                                    <th className="px-6 py-5">NAMA LENGKAP</th>
-                                    <th className="px-6 py-5">NO TELEPON</th>
-                                    <th className="px-6 py-5">USERNAME</th>
-                                    <th className="px-6 py-5 text-right">AKSI</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-stone-100">
-                                {employees.length === 0 && !isLoading ? (
-                                    <tr>
-                                        <td colSpan={5} className="px-6 py-10 text-center text-stone-400">
-                                            Belum ada data karyawan.
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    employees.map((emp, idx) => (
-                                        <tr key={emp.id} className="hover:bg-stone-50/50 transition-colors">
-                                            <td className="px-6 py-4 text-[#2D1603]">{(idx + 1).toString().padStart(2, '0')}</td>
-                                            <td className="px-6 py-4">
-                                                <div className="font-semibold text-[#2D1603]">{emp.full_name}</div>
-                                                <div className="text-xs text-[#51443C]">{emp.email}</div>
-                                            </td>
-                                            <td className="px-6 py-4 text-[#51443C]">{emp.telephone}</td>
-                                            <td className="px-6 py-4 text-[#51443C]">{emp.username}</td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center justify-end gap-4 text-[#51443C]">
-                                                    <button onClick={() => handleOpenEdit(emp)} className="hover:text-[#8C6D56] transition-colors" title="Edit">
-                                                        <Pencil size={16} />
-                                                    </button>
-                                                    <button onClick={() => handleDelete(emp.id)} className="hover:text-red-500 transition-colors" title="Hapus">
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                    {/* Pagination Dummy */}
-                    <div className="px-6 py-4 border-t border-stone-100 flex items-center justify-between text-xs text-stone-500 bg-white">
-                        <span>Showing {employees.length > 0 ? 1 : 0} to {employees.length} of {employees.length} employees</span>
-                        <div className="flex gap-1">
-                            <button className="w-8 h-8 flex items-center justify-center rounded border border-stone-200 hover:bg-stone-50">&lt;</button>
-                            <button className="w-8 h-8 flex items-center justify-center rounded bg-[#6F4627] text-white font-medium">1</button>
-                            <button className="w-8 h-8 flex items-center justify-center rounded border border-stone-200 hover:bg-stone-50">2</button>
-                            <button className="w-8 h-8 flex items-center justify-center rounded border border-stone-200 hover:bg-stone-50">&gt;</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
+        if (result.success) {
+            setModal({ isOpen: true, type: "success", title: "Berhasil!", message: `Sandi untuk ${selectedEmployee?.full_name} berhasil diperbarui.`, redirectToListOnClose: true });
+        } else {
+            setModal({ isOpen: true, type: "error", title: "Gagal!", message: result.message || "Gagal memperbarui password.", redirectToListOnClose: false });
+        }
+    };
 
-    // RENDER: ADD / EDIT VIEW 
     return (
-        <div className="p-6 sm:p-10 w-full max-w-4xl mx-auto">
-            {/* Header Form */}
-            <div className="flex flex-col gap-2 mb-8">
-                <button 
-                    onClick={() => setView("LIST")} 
-                    className="w-fit flex items-center gap-2 text-stone-500 hover:text-stone-800 transition-colors mb-2 text-sm font-medium"
-                    disabled={isSubmitting}
-                >
-                    <ArrowLeft size={16} /> Kembali
-                </button>
-                <h1 className="text-3xl font-bold text-stone-800 tracking-tight">
-                    {view === "ADD" ? "Tambah Karyawan Baru" : "Edit Data Karyawan"}
-                </h1>
-            </div>
+        <div className="relative w-full">
+            {modal.isOpen && (
+                <NotificationModal 
+                    type={modal.type} title={modal.title} message={modal.message}
+                    onClose={() => {
+                        setModal({ ...modal, isOpen: false });
+                        if (modal.redirectToListOnClose) setView("LIST");
+                    }}
+                />
+            )}
 
-            <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden relative">
-                {isSubmitting && (
-                    <div className="absolute inset-0 bg-white/50 backdrop-blur-sm flex items-center justify-center z-10">
-                        <RefreshCw className="animate-spin text-primary" size={32} />
-                    </div>
-                )}
+            {deleteModal.isOpen && (
+                <DeleteConfirmModal 
+                    itemName={deleteModal.name}
+                    onConfirm={handleExecuteDelete}
+                    onCancel={() => setDeleteModal({ isOpen: false, id: null, name: "" })}
+                />
+            )}
 
-                <div className="p-8 md:p-10">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                        <div className="flex flex-col gap-2">
-                            <label className="text-[11px] font-bold text-stone-500 tracking-wider">NAMA LENGKAP *</label>
-                            <input 
-                                type="text" 
-                                required
-                                value={formData.fullName}
-                                onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-                                placeholder="Contoh: Daniel Carter"
-                                className="px-4 py-3.5 text-sm rounded-md border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#8C6D56]/30 bg-stone-50/50"
-                            />
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <label className="text-[11px] font-bold text-stone-500 tracking-wider">USERNAME *</label>
-                            <input 
-                                type="text" 
-                                required
-                                value={formData.username}
-                                onChange={(e) => setFormData({...formData, username: e.target.value})}
-                                placeholder="carterdanie"
-                                className="px-4 py-3.5 text-sm rounded-md border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#8C6D56]/30 bg-stone-50/50"
-                            />
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <label className="text-[11px] font-bold text-stone-500 tracking-wider">EMAIL *</label>
-                            <input 
-                                type="email" 
-                                required
-                                value={formData.email}
-                                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                                placeholder="daniel@gmail.com"
-                                className="px-4 py-3.5 text-sm rounded-md border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#8C6D56]/30 bg-stone-50/50"
-                            />
-                        </div>
-                        {view === "ADD" && (
-                            <div className="flex flex-col gap-2">
-                                <label className="text-[11px] font-bold text-stone-500 tracking-wider">PASSWORD *</label>
-                                <input 
-                                    type="password" 
-                                    required={view === "ADD"}
-                                    value={formData.password}
-                                    onChange={(e) => setFormData({...formData, password: e.target.value})}
-                                    placeholder="••••••••"
-                                    className="px-4 py-3.5 text-sm rounded-md border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#8C6D56]/30 bg-stone-50/50"
-                                />
-                            </div>
-                        )}
-                        <div className="flex flex-col gap-2">
-                            <label className="text-[11px] font-bold text-stone-500 tracking-wider">NOMOR TELEPON *</label>
-                            <div className="flex items-stretch relative">
-                                <span className="flex items-center justify-center px-4 border border-r-0 border-stone-200 bg-stone-100 rounded-l-md text-sm text-stone-500 font-medium">
-                                    +62
-                                </span>
-                                <input 
-                                    type="text" 
-                                    required
-                                    value={formData.phone}
-                                    onChange={(e) => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})}
-                                    placeholder="812 3456 7890"
-                                    className="w-full px-4 py-3.5 text-sm rounded-r-md border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#8C6D56]/30 bg-stone-50/50"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="mt-12 pt-8 border-t border-stone-100 flex items-center justify-between">
-                        {view === "EDIT" ? (
-                            <button 
-                                type="button"
-                                onClick={() => handleDelete(selectedEmployee!.id)}
-                                className="flex items-center gap-2 text-sm font-medium text-red-500 hover:text-red-600 transition-colors"
-                                disabled={isSubmitting}
-                            >
-                                <Trash2 size={16} /> Hapus Karyawan
-                            </button>
-                        ) : <div></div>}
-                        
-                        <div className="flex items-center gap-4">
-                            <button 
-                                type="button" 
-                                onClick={() => setView("LIST")}
-                                className="text-sm font-medium text-stone-500 hover:text-stone-800 transition-colors px-4 py-2"
-                                disabled={isSubmitting}
-                            >
-                                Batal
-                            </button>
-                            <button 
-                                type="submit"
-                                disabled={isSubmitting}
-                                className="px-8 py-3.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-30 transition-colors shadow-sm disabled:opacity-70 flex items-center gap-2"
-                            >
-                                {isSubmitting && <RefreshCw size={14} className="animate-spin" />}
-                                {view === "ADD" ? "Simpan Karyawan" : "Perbarui Data"}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                {view === "ADD" && (
-                    <div className="bg-stone-50/80 px-10 py-4 flex items-center gap-2 text-[10px] font-bold tracking-wider text-[#4A5D23] border-t border-stone-100">
-                        <Shield size={14} /> DATA TERENKRIPSI
-                    </div>
-                )}
-            </form>
+            {view === "LIST" && <EmployeeList employees={employees} isLoading={isLoading} onAdd={handleOpenAdd} onEdit={handleOpenEdit} onResetPassword={handleOpenResetPassword} onDelete={handleRequestDelete} />}
+            
+            {(view === "ADD" || view === "EDIT") && <EmployeeForm view={view} selectedEmployee={selectedEmployee} isSubmitting={isSubmitting} onSubmit={handleFormSubmit} onCancel={() => setView("LIST")} onDelete={handleRequestDelete} />}
+            
+            {view === "RESET_PASSWORD" && <EmployeePasswordForm selectedEmployee={selectedEmployee} isSubmitting={isSubmitting} onSubmit={handlePasswordSubmit} onCancel={() => setView("LIST")} />}
         </div>
     );
 }

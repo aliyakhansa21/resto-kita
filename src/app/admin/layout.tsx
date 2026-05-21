@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Providers } from '../providers';
 import React from 'react';
-import AdminShell from '../components/admin/AdminShell';
+import AdminShell from './components/AdminShell';
 
 export const metadata: Metadata = {
     title: "Admin - Our Restaurant",
