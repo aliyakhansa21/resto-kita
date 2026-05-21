@@ -14,9 +14,24 @@ export default function EmployeePasswordForm({ selectedEmployee, isSubmitting, o
 
     const getPasswordStrength = (pass: string) => {
         if (!pass) return { label: "", color: "bg-stone-100", text: "", width: "0%" };
-        if (pass.length < 6) return { label: "LEMAH", color: "bg-red-500", text: "text-red-600", width: "33%" };
-        if (pass.length < 10) return { label: "SEDANG", color: "bg-yellow-500", text: "text-yellow-600", width: "66%" };
-        return { label: "KUAT", color: "bg-[#4A5D23]", text: "text-[#4A5D23]", width: "100%" };
+
+        // Cek kombinasi karakter menggunakan Regex
+        const hasUpperCase = /[A-Z]/.test(pass);
+        const hasLowerCase = /[a-z]/.test(pass);
+        const hasNumbers = /[0-9]/.test(pass);
+
+        // Kriteria Kuat: Ada huruf kapital, huruf kecil, angka, dan panjang min. 8 karakter
+        const isStrong = hasUpperCase && hasLowerCase && hasNumbers && pass.length >= 8;
+
+        if (isStrong) {
+            return { label: "KUAT", color: "bg-[#4A5D23]", text: "text-[#4A5D23]", width: "100%" };
+        } else if (pass.length >= 6) {
+            // Kalau udah di atas 6 karakter tapi belum memenuhi kombinasi di atas
+            return { label: "SEDANG", color: "bg-yellow-500", text: "text-yellow-600", width: "66%" };
+        } else {
+            // Kalau masih di bawah 6 karakter otomatis lemah
+            return { label: "LEMAH", color: "bg-red-500", text: "text-red-600", width: "33%" };
+        }
     };
 
     const strength = getPasswordStrength(resetData.newPassword);
