@@ -81,18 +81,24 @@ export default function PesananPage() {
     const headers = ["No", "Kode Pesanan", "Pelanggan", "Total", "Status", "No Meja", "Pembayaran", "Catatan", "Dibuat Pada"];
     const rows = orders.map((order: any, index: number) => {
       
-      const total = order.order_items?.reduce((acc: number, curr: any) => {
-        const rawPrice = curr?.item?.price ? String(curr.item.price).replace(/[^0-9]/g, "") : "0";
+      // 1. Hitung dulu Subtotal murni dari harga item * jumlah
+      const subtotal = order.order_items?.reduce((acc: number, curr: any) => {
         const price = parseFloat(curr?.item?.price || "0");
         const amount = Number(curr?.amount) || 0;
         return acc + (price * amount);
       }, 0) || 0;
 
+      // 2. Hardcode kalkulasi pajak 10%
+      const taxAmount = subtotal * 0.1;
+
+      // 3. Hitung Grand Total (Subtotal + Pajak)
+      const grandTotal = subtotal + taxAmount;
+
       return [
         index + 1,
         order.order_id || "-",
         order.customer_name || "-", 
-        total,
+        grandTotal,
         order.payment_status || "-",
         order.table?.number || "-", 
         order.payment_method || "-",
@@ -218,12 +224,18 @@ export default function PesananPage() {
                 !isError &&
                 paginatedOrders.map((order: any, index: number) => {
                   
-                  const total = order.order_items?.reduce((acc: number, curr: any) => {
-                    const rawPrice = curr?.item?.price ? String(curr.item.price).replace(/[^0-9]/g, "") : "0";
+                  // 1. Hitung dulu Subtotal murni dari harga item * jumlah
+                  const subtotal = order.order_items?.reduce((acc: number, curr: any) => {
                     const price = parseFloat(curr?.item?.price || "0");
                     const amount = Number(curr?.amount) || 0;
                     return acc + (price * amount);
                   }, 0) || 0;
+
+                  // 2. Hardcode kalkulasi pajak 10%
+                  const taxAmount = subtotal * 0.1;
+
+                  // 3. Hitung Grand Total (Subtotal + Pajak)
+                  const grandTotal = subtotal + taxAmount;
 
                   return (
                     <tr
@@ -247,7 +259,7 @@ export default function PesananPage() {
 
                       {/* Total */}
                       <td className="py-4 px-5 font-bold text-gray-900">
-                        Rp {total.toLocaleString("id-ID")}
+                        Rp {grandTotal.toLocaleString("id-ID")}
                       </td>
 
                       {/* Status */}
@@ -265,8 +277,8 @@ export default function PesananPage() {
                       </td>
 
                       {/* Pembayaran */}
-                      <td className="py-4 px-5 text-gray-600 text-center">
-                        {formatPaymentMethod(order.payment_method) || "-"}
+                      <td className="py-4 px-5 text-gray-600 text-center font-medium">
+                        {formatPaymentMethod(order.payment_method)}
                       </td>
 
                       {/* Catatan */}
