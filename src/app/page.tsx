@@ -22,12 +22,14 @@ function MenuContent() {
 
     const urlToken = searchParams.get("token");
     const urlTable = searchParams.get("table");
+    const urlName = searchParams.get("name");
 
     const [categoryId, setCategoryId] = useState("all");
     const [search, setSearch] = useState("");
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [tableToken, setTableToken] = useState("");
     const [tableNumber, setTableNumber] = useState("");
+    const [customerName, setCustomerName] = useState("");
 
     useEffect(() => {
         const bootstrap = async () => {
@@ -35,9 +37,11 @@ function MenuContent() {
                 // Simpan ke sessionStorage, lalu bersihkan URL
                 sessionStorage.setItem("tableToken", urlToken);
                 if (urlTable) sessionStorage.setItem("tableNumber", urlTable);
+                if (urlName) sessionStorage.setItem("customerName", urlName);
 
                 setTableToken(urlToken);
                 setTableNumber(urlTable ?? "");
+                setCustomerName(urlName ?? "");
 
                 // Hapus token & table dari URL
                 router.replace("/");
@@ -46,10 +50,12 @@ function MenuContent() {
 
             const storedToken = sessionStorage.getItem("tableToken");
             const storedTable = sessionStorage.getItem("tableNumber");
+            const storedName = sessionStorage.getItem("customerName");
 
             if (storedToken) {
                 setTableToken(storedToken);
                 setTableNumber(storedTable ?? "");
+                setCustomerName(storedName ?? "");
                 return;
             }
         };
@@ -285,6 +291,7 @@ function MenuContent() {
             onRemove={removeItem}
             tableToken={tableToken}
             tableNumber={tableNumber}
+            customerName={customerName}
         />
         </>
     );

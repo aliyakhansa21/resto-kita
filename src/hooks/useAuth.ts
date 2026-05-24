@@ -14,7 +14,7 @@ export function useLogin() {
         onSuccess: (data) => {
         localStorage.setItem('admin_token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        router.push('/admin/pesanan');
+        router.push('/admin');
         },
     });
 }

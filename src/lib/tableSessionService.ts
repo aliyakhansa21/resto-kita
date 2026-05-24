@@ -1,7 +1,6 @@
 import api from "@/lib/api";
 import type { ApiTableSessionResponse, TableSession } from "@/types";
 
-
 export async function getMasterTables(): Promise<{ id: number; number: number }[]> {
     try {
         const { data } = await api.get<{ data: { id: number; number: number }[] }>("/admin/tables");
@@ -11,7 +10,6 @@ export async function getMasterTables(): Promise<{ id: number; number: number }[
         return Array.from({ length: 10 }, (_, i) => ({ id: i + 1, number: i + 1 }));
     }
 }
-
 
 export async function getTableSessions(): Promise<TableSession[]> {
     let allData: any[] = [];
@@ -31,13 +29,15 @@ export async function getTableSessions(): Promise<TableSession[]> {
 
     return allData.map(item => {
         const resolvedTableId = item.table?.number || item.table?.id || item.table_id;
+        
+        const nameParam = item.customer_name ? `&name=${encodeURIComponent(item.customer_name)}` : "";
 
         return {
             token: item.token,
             tableId: resolvedTableId, 
             seatedAt: item.seated_at,
             customerName: item.customer_name,
-            qrUrl: `${baseUrl}/?token=${item.token}&table=${resolvedTableId}`,
+            qrUrl: `${baseUrl}/?token=${item.token}&table=${resolvedTableId}${nameParam}`,
             isActive: item.is_active === true || item.status === 'active'
         };
     });
@@ -56,10 +56,12 @@ export async function generateTableSession(tableId: number, customerName: string
             ? window.location.origin
             : "";
 
+    const nameParam = customerName ? `&name=${encodeURIComponent(customerName)}` : "";
+
     return {
         token: data.data.token,
         tableId: data.data.table_id,
         seatedAt: data.data.seated_at,
-        qrUrl: `${baseUrl}/?token=${data.data.token}&table=${data.data.table_id}`,
+        qrUrl: `${baseUrl}/?token=${data.data.token}&table=${data.data.table_id}${nameParam}`,
     };
 }

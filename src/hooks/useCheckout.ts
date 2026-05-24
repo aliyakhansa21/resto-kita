@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { confirmCheckout } from "@/lib/checkoutService";
 import { usePayment } from "./usePayment";
 import type {
@@ -29,12 +29,10 @@ interface UseCheckoutReturn {
   payment: ReturnType<typeof usePayment>;
 }
 
-export function useCheckout(token: string, initialTable?: string): UseCheckoutReturn {
+export function useCheckout(token: string, initialTable?: string, initialName?: string) {
   const [form, setForm] = useState<CheckoutForm>({
-    name: "",
-    whatsapp: "",
+    name: initialName ?? "", 
     table: initialTable ?? "",
-    notes: "",
   });
   const [formErrors, setFormErrors] = useState<CheckoutFormErrors>({});
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("non_cash");
@@ -44,18 +42,20 @@ export function useCheckout(token: string, initialTable?: string): UseCheckoutRe
 
   const payment = usePayment();
 
+  useEffect(() => {
+    const storedName = sessionStorage.getItem("customerName");
+    
+    if (storedName) {
+      setForm((prev) => ({ ...prev, name: storedName }));
+    }
+  }, []);
+
   const validate = (): CheckoutFormErrors => {
     const errs: CheckoutFormErrors = {};
     if (!form.name.trim()) errs.name = "Nama lengkap wajib diisi";
-    if (!form.whatsapp.trim()) {
-      errs.whatsapp = "Nomor WhatsApp wajib diisi";
-    } else if (!/^[0-9]{9,15}$/.test(form.whatsapp.replace(/\s/g, ""))) {
-      errs.whatsapp = "Nomor WhatsApp tidak valid";
-    }
     return errs;
   };
 
-  // POST /checkout — finalisasi pembayaran
   const handleSubmit = async (): Promise<void> => {
     const errs = validate();
     if (Object.keys(errs).length) { setFormErrors(errs); return; }
@@ -77,7 +77,6 @@ export function useCheckout(token: string, initialTable?: string): UseCheckoutRe
       if (paymentMethod === "non_cash") {
         await payment.startPayment(invoiceId, form.name);
       }
-      // setCompletedOrder({ session, paymentMethod });
     } catch (err) {
       setSubmitError(
         err instanceof Error ? err.message : "Terjadi kesalahan. Silakan coba lagi."

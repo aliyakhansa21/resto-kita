@@ -134,9 +134,7 @@ export interface PlaceOrderResponse {
 
 export interface CheckoutForm {
   name: string;
-  whatsapp: string;
   table: string;
-  notes: string;
 }
 
 export type CheckoutFormErrors = Partial<Record<keyof CheckoutForm, string>>;
@@ -145,9 +143,7 @@ export type CheckoutFormErrors = Partial<Record<keyof CheckoutForm, string>>;
 
 export interface CheckoutSubmitPayload {
   customer_name: string;
-  whatsapp_number: string;
   table_number: string;
-  notes: string;
   payment_method: PaymentMethod;
 }
 

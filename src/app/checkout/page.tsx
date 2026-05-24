@@ -20,12 +20,16 @@ function CheckoutContent() {
 
   const token = searchParams.get("token") ?? "";
   const tableNumber = searchParams.get("table") ?? "07";
+  
+  // 1. Tambahkan baris ini untuk menangkap nama dari URL QR Code
+  const customerName = searchParams.get("name") ?? "Pelanggan"; 
 
   // Order summary dari API (sudah di-place sebelumnya di CartModal)
   const { orders, loading: ordersLoading, grandTotal } = useOrders();
   const tax = grandTotal * 0.1;
   const totalWithTax = grandTotal + tax;
 
+  // 2. Lempar customerName sebagai argumen ketiga ke dalam hook useCheckout
   const {
     form,
     setForm,
@@ -38,7 +42,7 @@ function CheckoutContent() {
     handleSubmit,
     reset,
     payment,
-  } = useCheckout(token, tableNumber);
+  } = useCheckout(token, tableNumber, customerName);
 
   // Non-Cash: sedang proses Midtrans 
   // Tampil saat: creating snap token, waiting (popup terbuka), polling status

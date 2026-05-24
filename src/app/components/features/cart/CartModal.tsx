@@ -18,8 +18,9 @@ interface CartModalProps {
     totalPrice: number;
     onUpdateQty: (id: string, qty: number) => void;
     onRemove: (id: string) => void;
-    tableToken?: string; //token sesi meja dari QR/URL
+    tableToken?: string; 
     tableNumber?: string;
+    customerName?: string;
 }
 
 // component
@@ -33,6 +34,7 @@ export function CartModal({
     onRemove,
     tableToken = "",
     tableNumber = "1",
+    customerName = "",
 }: CartModalProps) {
     const router = useRouter();
     const { clearCart } = useCart();
@@ -62,23 +64,25 @@ export function CartModal({
         setPlaceError(null);
     
         try {
-        await placeOrder({
-            orders: items.map((ci) => ({
-                item_id: Number(ci.menuItem.id),
-                amount: ci.quantity,
-            })),
-            table_number: parseInt(tableNumber),
-        });
+            await placeOrder({
+                orders: items.map((ci) => ({
+                    item_id: Number(ci.menuItem.id),
+                    amount: ci.quantity,
+                })),
+                table_number: parseInt(tableNumber),
+            });
     
-        clearCart();
-        onClose();
-        router.push(`/orders?token=${tableToken}&table=${tableNumber}`);
+            clearCart();
+            onClose();
+            
+            router.push(`/checkout?token=${tableToken}&table=${tableNumber}&name=${encodeURIComponent(customerName)}`);
+            
         } catch (err) {
-        setPlaceError(
-            err instanceof Error ? err.message : "Gagal membuat pesanan. Coba lagi."
-        );
+            setPlaceError(
+                err instanceof Error ? err.message : "Gagal membuat pesanan. Coba lagi."
+            );
         } finally {
-        setPlacing(false);
+            setPlacing(false);
         }
     };
     
