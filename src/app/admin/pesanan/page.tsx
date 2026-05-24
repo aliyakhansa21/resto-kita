@@ -78,7 +78,7 @@ export default function PesananPage() {
 
   const handleExport = () => {
     if (!orders || orders.length === 0) return;
-    const headers = ["No", "Kode Pesanan", "Pelanggan", "Total", "Status", "No Meja", "Pembayaran", "Catatan", "Dibuat Pada"];
+    const headers = ["No", "Kode Pesanan", "Pelanggan", "Total", "Status", "No Meja", "Pembayaran", "Dibuat Pada"];
     const rows = orders.map((order: any, index: number) => {
       
       // 1. Hitung dulu Subtotal murni dari harga item * jumlah
@@ -171,7 +171,6 @@ export default function PesananPage() {
                 <th className="py-4 px-5 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">Status</th>
                 <th className="py-4 px-5 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">No Meja</th>
                 <th className="py-4 px-5 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">Pembayaran</th>
-                <th className="py-4 px-5 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">Catatan</th>
                 <th className="py-4 px-5 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">Dibuat Pada</th>
                 <th className="py-4 px-5 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">Aksi</th>
               </tr>
@@ -279,13 +278,6 @@ export default function PesananPage() {
                       {/* Pembayaran */}
                       <td className="py-4 px-5 text-gray-600 text-center font-medium">
                         {formatPaymentMethod(order.payment_method)}
-                      </td>
-
-                      {/* Catatan */}
-                      <td className="py-4 px-5 text-gray-500 max-w-[150px] text-center">
-                        <span className="block truncate" title={undefined}>
-                          {"-"}
-                        </span>
                       </td>
 
                       {/* Dibuat Pada */}

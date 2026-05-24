@@ -175,29 +175,6 @@ export default function OrderDetailPage() {
             </div>
           </div>
         </div>
-
-        {/* Catatan */}
-        <div className="flex gap-4 items-start">
-          <svg
-            className="w-5 h-5 text-primary mt-0.5 shrink-0"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-            />
-          </svg>
-          <div>
-            <p className="text-xs font-medium text-primary-60 uppercase tracking-widest mb-1">
-              Catatan
-            </p>
-            <p className="font-medium text-gray-900">{"-"}</p>
-          </div>
-        </div>
       </div>
 
       {/* Card Daftar Menu */}
