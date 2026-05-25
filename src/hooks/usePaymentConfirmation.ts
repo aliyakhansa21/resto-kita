@@ -13,10 +13,12 @@ export interface Payment {
 export function usePayments() {
     const [payments, setPayments] = useState<Payment[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isError, setIsError] = useState(false);
     const [isProcessingId, setIsProcessingId] = useState<number | null>(null);
 
     const fetchPayments = useCallback(async () => {
         setIsLoading(true);
+        setIsError(false);
         try {
             // GET: Mengambil data sesi meja beserta invoice-nya
             const { data } = await api.get("/admin/table-sessions");
@@ -37,6 +39,7 @@ export function usePayments() {
             setPayments(mappedPayments);
         } catch (error) {
             console.error("Gagal mengambil data pembayaran:", error);
+            setIsError(true);
         } finally {
             setIsLoading(false);
         }
@@ -76,6 +79,7 @@ export function usePayments() {
     return {
         payments,
         isLoading,
+        isError,
         isProcessingId,
         confirmCashPayment,
         refresh: fetchPayments

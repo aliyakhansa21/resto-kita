@@ -8,7 +8,7 @@ export function useAdminCategories() {
     const queryClient = useQueryClient();
 
     // GET: Fetch Categories
-    const { data: categories = [], isLoading, isError } = useQuery<Category[]>({
+    const { data: categories = [], isLoading, isError, refetch } = useQuery<Category[]>({
         queryKey: ["admin-categories"],
         queryFn: async () => {
             const { data } = await api.get("/admin/categories");
@@ -50,6 +50,7 @@ export function useAdminCategories() {
         categories,
         isLoading,
         isError,
+        refetch,
         createCategory: createMutation.mutateAsync,
         isCreating: createMutation.isPending,
         updateCategory: updateMutation.mutateAsync,

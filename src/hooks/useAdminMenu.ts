@@ -37,7 +37,7 @@ export function useAdminMenu({ page, perPage }: UseAdminMenuParams) {
     const queryClient = useQueryClient();
     const queryKey = ["admin-menu-items", page, perPage];
 
-    const { data, isLoading, isError, error } = useQuery<AdminMenuResponse, Error>({
+    const { data, isLoading, isError, error, refetch } = useQuery<AdminMenuResponse, Error>({
         queryKey,
         queryFn: async () => {
             const { data } = await api.get<AdminMenuResponse>(`/admin/items?page=${page}&per_page=${perPage}`);
@@ -77,6 +77,7 @@ export function useAdminMenu({ page, perPage }: UseAdminMenuParams) {
         isLoading,
         isError,
         error,
+        refetch,
         toggleStatus: toggleStatusMutation.mutate,
         isToggling: toggleStatusMutation.isPending, 
         deleteItem: deleteMutation.mutate,

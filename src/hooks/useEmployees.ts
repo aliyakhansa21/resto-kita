@@ -12,16 +12,19 @@ export interface Employee {
 export function useEmployees() {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isError, setIsError] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // GET: Fetch all employees
     const fetchEmployees = useCallback(async () => {
         setIsLoading(true);
+        setIsError(false);
         try {
             const response = await api.get("/admin/employees");
             setEmployees(response.data.data || []);
         } catch (error) {
             console.error("Failed to fetch employees:", error);
+            setIsError(true);
         } finally {
             setIsLoading(false);
         }
@@ -109,6 +112,7 @@ export function useEmployees() {
     return {
         employees,
         isLoading,
+        isError,
         isSubmitting,
         addEmployee,
         editEmployee,

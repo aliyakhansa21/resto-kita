@@ -3,7 +3,7 @@ import api from '@/lib/api';
 import { Order } from '@/types/api';
 
 export function useAdminOrders() {
-    return useQuery({
+    const { data, isLoading, isError, refetch } = useQuery({
         queryKey: ['admin-orders'],
         queryFn: async () => {
             // Ambil data list pesanan utama
@@ -28,6 +28,13 @@ export function useAdminOrders() {
             return resolvedOrders as unknown as Order[];
         },
     });
+
+    return {
+        data,
+        isLoading,
+        isError,
+        refetch
+    };
 }
 
 export function useAdminOrderDetail(id: string) {
