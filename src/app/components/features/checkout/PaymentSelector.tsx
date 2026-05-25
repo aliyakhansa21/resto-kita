@@ -1,12 +1,11 @@
-// src/app/components/features/checkout/PaymentSelector.tsx
-
 import { PaymentMethod } from "@/types";
+import { Banknote, Smartphone } from "lucide-react";
 
 interface PaymentOption {
     id: PaymentMethod;
     label: string;
     sub: string;
-    icon: string;
+    icon: React.ElementType; 
 }
 
 interface Props {
@@ -15,8 +14,8 @@ interface Props {
 }
 
 const OPTIONS: PaymentOption[] = [
-    { id: "cash",     label: "Cash",     sub: "Pay at the cashier",          icon: "💵" },
-    { id: "non_cash", label: "Non-Cash", sub: "QRIS, OVO, Dana, GoPay, etc", icon: "📱" },
+    { id: "cash",     label: "Cash",     sub: "Pay at the cashier",          icon: Banknote },
+    { id: "non_cash", label: "Non-Cash", sub: "QRIS, OVO, Dana, GoPay, etc", icon: Smartphone },
 ];
 
 export function PaymentSelector({ selected, onChange }: Props) {
@@ -24,6 +23,7 @@ export function PaymentSelector({ selected, onChange }: Props) {
         <div className="flex flex-col gap-3 mb-6">
             {OPTIONS.map((opt) => {
                 const active = selected === opt.id;
+                const Icon = opt.icon; 
                 return (
                 <label
                     key={opt.id}
@@ -31,11 +31,11 @@ export function PaymentSelector({ selected, onChange }: Props) {
                     ${
                         active
                         ? "bg-primary/5 border-primary border-2"
-                        : "border-secondary hover:border-primary border-2"
+                        : "border-primary/5 hover:border-primary border-2"
                     }`}
                 >
-                    <div className="flex items-center gap-3">
-                        <span className="text-2xl">{opt.icon}</span>
+                    <div className="flex items-center gap-4">
+                        <Icon className={`w-7 h-7 ${active ? "text-primary" : "text-secondary-50"}`} />
                         <div>
                             <p className="font-bold text-base text-primary-50">{opt.label}</p>
                             <p className="text-text-xs text-secondary-50">{opt.sub}</p>

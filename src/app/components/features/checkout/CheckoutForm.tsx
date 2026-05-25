@@ -1,4 +1,5 @@
 import { CheckoutForm as FormState, CheckoutFormErrors } from "@/types";
+import { UserRound } from 'lucide-react';
 
 interface Props {
     form: FormState;
@@ -9,7 +10,10 @@ interface Props {
 export function CheckoutForm({ form }: Props) {
     return (
         <section className="bg-white rounded-2xl shadow-md p-7">
-            <h2 className="font-bold text-base text-primary-50 mb-5">Customer Details</h2>
+            <h2 className="font-bold text-base text-primary-50 mb-5 flex items-center gap-2">
+                <UserRound size={20} />
+                Customer Details
+            </h2>
 
             <div className="flex flex-wrap gap-4">
                 {/* Nama (read-only) */}

@@ -21,7 +21,7 @@ export function Navbar({ tableNumber, onCartClick, cartCount }: NavbarProps) {
     };
 
     return (
-        <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-3 bg-[#FAF7F2] backdrop-blur-md border-b border-stone-200">
+        <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-3 bg-[#FFFFFF] backdrop-blur-md border-b border-stone-200">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 font-bold text-stone-800">
             <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-white">

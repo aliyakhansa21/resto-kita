@@ -10,6 +10,7 @@ import PaymentStatusUI from "@/app/components/features/checkout/PaymentStatus";
 import { OrderDetail } from "@/app/components/features/checkout/OrderDetail";
 import { Navbar } from "@/app/components/shared/Navbar";
 import { Footer } from "@/app/components/shared/Footer";
+import { Receipt, CreditCard, Info } from "lucide-react";
 
 const fmt = (val: number): string =>
   "Rp" + val.toLocaleString("id-ID").replace(/,/g, ".");
@@ -21,7 +22,6 @@ function CheckoutContent() {
   const token = searchParams.get("token") ?? "";
   const tableNumber = searchParams.get("table") ?? "07";
   
-  // 1. Tambahkan baris ini untuk menangkap nama dari URL QR Code
   const customerName = searchParams.get("name") ?? "Pelanggan"; 
 
   // Order summary dari API (sudah di-place sebelumnya di CartModal)
@@ -29,7 +29,6 @@ function CheckoutContent() {
   const tax = grandTotal * 0.1;
   const totalWithTax = grandTotal + tax;
 
-  // 2. Lempar customerName sebagai argumen ketiga ke dalam hook useCheckout
   const {
     form,
     setForm,
@@ -53,7 +52,7 @@ function CheckoutContent() {
 
   if (isNonCashProcessing) {
     return (
-      <div className="min-h-screen flex flex-col bg-secondary-DEFAULT/20">
+      <div className="min-h-screen flex flex-col bg-[#FAF7F2]">
         <Navbar tableNumber={tableNumber} cartCount={0} onCartClick={() => {}} />
         <main className="flex-1 max-w-2xl mx-auto w-full px-6 py-24">
           <h1 className="text-h2 text-primary-50 mb-1">Pembayaran</h1>
@@ -88,7 +87,7 @@ function CheckoutContent() {
     (completedOrder.paymentMethod === "cash" || payment.paymentState === "paid")
   ) {
     return (
-      <div className="min-h-screen flex flex-col bg-secondary-DEFAULT/20">
+      <div className="min-h-screen flex flex-col bg-[#FAF7F2]">
         <Navbar tableNumber={tableNumber} cartCount={0} onCartClick={() => {}} />
         <main className="flex-1 max-w-2xl mx-auto w-full px-6 py-24">
           <h1 className="text-h2 text-primary-50 mb-1">Order Details</h1>
@@ -111,7 +110,7 @@ function CheckoutContent() {
 
   // Checkout Form 
   return (
-    <div className="min-h-screen flex flex-col bg-secondary-DEFAULT/20">
+    <div className="min-h-screen flex flex-col bg-[#FAF7F2]">
       <Navbar tableNumber={tableNumber} cartCount={0} onCartClick={() => {}} />
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-24">
@@ -126,9 +125,9 @@ function CheckoutContent() {
             <CheckoutForm form={form} setForm={setForm} errors={formErrors} />
 
             {/* Order Summary */}
-            <section className="bg-white rounded-2xl shadow-sm border border-secondary-20 p-7">
-              <h2 className="font-bold text-base text-primary-50 mb-5">
-                🧾 Order Summary
+            <section className="bg-white rounded-2xl shadow-md p-7">
+              <h2 className="flex items-center gap-2 font-bold text-base text-primary-50 mb-5">
+                <Receipt className="w-5 h-5 text-primary" /> Order Summary
               </h2>
               {ordersLoading ? (
                 <div className="flex items-center justify-center py-8 gap-3">
@@ -172,9 +171,9 @@ function CheckoutContent() {
 
           {/* Right: Payment */}
           <div className="lg:sticky lg:top-24">
-            <section className="bg-white rounded-2xl shadow-sm border border-secondary-20 p-7">
-              <h2 className="font-bold text-base text-primary-50 mb-5">
-                💳 Payment Method
+            <section className="bg-white rounded-2xl shadow-md p-7">
+              <h2 className="flex items-center gap-2 font-bold text-base text-primary-50 mb-5">
+                <CreditCard className="w-5 h-5 text-primary" /> Payment Method
               </h2>
 
               <PaymentSelector selected={paymentMethod} onChange={setPaymentMethod} />
@@ -197,9 +196,12 @@ function CheckoutContent() {
 
               {/* Info Non-Cash */}
               {paymentMethod === "non_cash" && (
-                <div className="mt-4 bg-secondary-DEFAULT/20 rounded-xl px-4 py-3 text-text-xs text-secondary-50 leading-relaxed">
-                  💡 Kamu akan diarahkan ke halaman pembayaran Midtrans.
-                  Tersedia QRIS, GoPay, OVO, Dana, transfer bank, dan kartu kredit.
+                <div className="mt-4 bg-secondary-DEFAULT/20 rounded-xl px-4 py-3 text-text-xs text-secondary-50 leading-relaxed flex items-start gap-2">
+                  <Info className="w-4 h-4 flex-shrink-0 mt-0.5 text-secondary-50" />
+                  <span>
+                    Kamu akan diarahkan ke halaman pembayaran Midtrans.
+                    Tersedia QRIS, GoPay, OVO, Dana, transfer bank, dan kartu kredit.
+                  </span>
                 </div>
               )}
 

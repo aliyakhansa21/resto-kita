@@ -1,4 +1,5 @@
 import type { CheckoutSession, PaymentMethod } from "@/types";
+import { Receipt, CheckCircle, Banknote, Smartphone, Check, Info, Clock } from "lucide-react";
 
 interface Props {
   session: CheckoutSession;
@@ -30,7 +31,13 @@ export function OrderDetail({ session, paymentMethod, onBack }: Props) {
 
       {/* Status Banner */}
       <div className={`flex items-start gap-4 px-6 py-5 ${isCash ? "bg-[#FFFBEB]" : "bg-green-50"}`}>
-        <span className="text-4xl mt-0.5">{isCash ? "🧾" : "✅"}</span>
+        <span className="mt-0.5">
+            {isCash ? (
+                <Receipt className="w-10 h-10 text-[#92400E]" />
+            ) : (
+                <CheckCircle className="w-10 h-10 text-green-600" />
+            )}
+        </span>
         <div>
           <p className={`font-bold text-base ${isCash ? "text-[#92400E]" : "text-green-700"}`}>
             {isCash ? "Waiting for Payment" : "Payment Successful"}
@@ -45,8 +52,8 @@ export function OrderDetail({ session, paymentMethod, onBack }: Props) {
 
       {/* Payment Info */}
       <section className="px-6 py-5 border-t border-secondary-20">
-        <h2 className="font-bold text-base text-primary-50 mb-4">
-          🧾 Payment Information
+        <h2 className="flex items-center gap-2 font-bold text-base text-primary-50 mb-4">
+          <Receipt className="w-5 h-5 text-primary" /> Payment Information
         </h2>
         <div className="bg-[#F7F7F6] rounded-xl overflow-hidden">
           <div className="flex justify-between items-center px-4 py-3 border-b border-secondary-20">
@@ -59,8 +66,12 @@ export function OrderDetail({ session, paymentMethod, onBack }: Props) {
             <span className="text-text-xs font-semibold text-secondary-50 uppercase tracking-wider">
               Method
             </span>
-            <span className="font-semibold text-base text-primary-50">
-              {isCash ? "💵 Cash" : "📱 Non-Cash"}
+            <span className="flex items-center gap-1.5 font-semibold text-base text-primary-50">
+              {isCash ? (
+                <><Banknote className="w-5 h-5 text-primary" /> Cash</>
+              ) : (
+                <><Smartphone className="w-5 h-5 text-primary" /> Non-Cash</>
+              )}
             </span>
           </div>
           {!isCash && (
@@ -68,8 +79,8 @@ export function OrderDetail({ session, paymentMethod, onBack }: Props) {
               <span className="text-text-xs font-semibold text-secondary-50 uppercase tracking-wider">
                 Status
               </span>
-              <span className="bg-green-100 text-green-700 font-bold text-text-sm px-3 py-1 rounded-full">
-                ✓ PAID
+              <span className="flex items-center gap-1 bg-green-100 text-green-700 font-bold text-text-sm px-3 py-1 rounded-full">
+                <Check className="w-4 h-4" /> PAID
               </span>
             </div>
           )}
@@ -121,15 +132,15 @@ export function OrderDetail({ session, paymentMethod, onBack }: Props) {
       </section>
 
       {/* ── Note ── */}
-      <div className="mx-6 mb-5 flex items-center gap-3 bg-secondary-DEFAULT/30 rounded-xl px-4 py-3 border-l-4 border-primary">
+      <div className="mx-6 mb-5 flex items-start gap-3 bg-secondary-DEFAULT/30 rounded-xl px-4 py-3 border-l-4 border-primary">
         {isCash ? (
-          <p className="text-text-sm text-secondary-60">
-            <span className="mr-2">ℹ️</span>
+          <p className="flex gap-2 text-text-sm text-secondary-60">
+            <Info className="w-5 h-5 flex-shrink-0 text-primary" />
             Show this code to the cashier upon pickup.
           </p>
         ) : (
           <>
-            <span className="text-xl">🕐</span>
+            <Clock className="w-8 h-8 text-primary flex-shrink-0" />
             <div>
               <p className="text-text-xs font-bold text-primary uppercase tracking-widest">
                 Estimated Arrival

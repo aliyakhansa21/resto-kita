@@ -1,5 +1,6 @@
 import type { PaymentState } from "@/hooks/usePayment";
 import type { PaymentStatusResponse } from "@/lib/paymentService";
+import { CheckCircle, XCircle } from "lucide-react";
 
 interface Props {
     state: PaymentState;
@@ -43,8 +44,8 @@ export default function PaymentStatusUI({
 
         return (
         <div className="flex flex-col items-center justify-center gap-3 py-24 text-center">
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center text-4xl">
-            ✅
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                <CheckCircle className="w-8 h-8" />
             </div>
             <p className="font-bold text-base text-green-700">Pembayaran Berhasil!</p>
             {status?.payment_method && (
@@ -63,8 +64,8 @@ export default function PaymentStatusUI({
     if (state === "failed" || state === "error") {
         return (
         <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
-            <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center text-4xl">
-                ❌
+            <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center text-red-500">
+                <XCircle className="w-8 h-8" />
             </div>
             <p className="font-bold text-base text-red-600">Pembayaran Gagal</p>
             <p className="text-text-sm text-secondary-50 max-w-xs">
