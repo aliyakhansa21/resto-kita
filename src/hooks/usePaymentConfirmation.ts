@@ -20,21 +20,37 @@ export function usePayments() {
         setIsLoading(true);
         setIsError(false);
         try {
-            // GET: Mengambil data sesi meja beserta invoice-nya
-            const { data } = await api.get("/admin/table-sessions");
-            const sessions = data.data || [];
+            // Ambil data Halaman 1 dari table-sessions
+            const { data: firstResponse } = await api.get("/admin/table-sessions?page=1");
+            let allSessions = [...(firstResponse.data || [])];
+            
+            // Ambil total halaman (jika backend mengirimkan meta pagination)
+            const lastPage = firstResponse.meta?.last_page || 1;
 
-            // Memetakan data dari backend ke interface Payment kita
-            const mappedPayments: Payment[] = sessions
-                .filter((s: any) => s.invoice !== null) // Hanya tampilkan yang sudah ada tagihan/invoice
+            // Looping untuk mengambil sisa halaman 
+            if (lastPage > 1) {
+                const promises = [];
+                for (let i = 2; i <= lastPage; i++) {
+                    promises.push(api.get(`/admin/table-sessions?page=${i}`));
+                }
+                const responses = await Promise.all(promises);
+                responses.forEach(res => {
+                    allSessions = [...allSessions, ...(res.data.data || [])];
+                });
+            }
+
+            const mappedPayments: Payment[] = allSessions
+                .filter((s: any) => s.invoice !== null) 
                 .map((s: any) => ({
                     id: s.token || s.id.toString(),
-                    invoice_id: s.invoice.id,
+                    invoice_id: s.invoice.id, 
                     tableNo: s.table?.number || 0,
                     customer_name: s.customer_name,
                     totalAmount: parseFloat(s.invoice.grand_total || "0"),
                     status: (s.invoice.status === 'paid' || s.invoice.status === 'PAID') ? "PAID" : "PENDING"
-                }));
+                } as Payment))
+                // Sort dari yang terbaru (ID terbesar) ke terkecil
+                .sort((a: Payment, b: Payment) => b.invoice_id - a.invoice_id);
 
             setPayments(mappedPayments);
         } catch (error) {
@@ -45,12 +61,10 @@ export function usePayments() {
         }
     }, []);
 
-    // Load data otomatis saat pertama kali dibuka
     useEffect(() => {
         fetchPayments();
     }, [fetchPayments]);
 
-    // Fungsi konfirmasi pembayaran 
     const confirmCashPayment = async (invoiceId: number, customerName: string) => {
         setIsProcessingId(invoiceId);
         try {
