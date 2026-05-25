@@ -20,9 +20,10 @@ export default function DashboardPage() {
     const router = useRouter();
     const { data, isLoading, isError } = useAdminDashboard();
 
-    const formatRupiah = (number: number | null) => {
-        if (!number) return "Rp 0";
-        return `Rp ${number.toLocaleString("id-ID")}`;
+    const formatRupiah = (value: number | string | null) => {
+        if (!value) return "Rp 0";
+        const num = typeof value === "string" ? parseFloat(value) : value;
+        return `Rp ${num.toLocaleString("id-ID")}`;
     };
 
     const calculateOrderTotal = (orderItems: any[]) => {
