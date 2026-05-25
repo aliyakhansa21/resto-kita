@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { CheckCircle, Check, RefreshCw, X, Banknote } from "lucide-react";
 import { usePayments, type Payment } from "@/hooks/usePaymentConfirmation";
+import { useTablePagination, calculatePagination } from "@/hooks/useTablePagination";
+import { PaginationControls } from "@/app/admin/components/PaginationControls";
+import { DataTableLoadingOverlay } from "@/app/admin/components/DataTableLoading";
+import { DataTableError, DataTableEmpty } from "@/app/admin/components/DataTableStates";
 
 const formatRupiah = (amount: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -88,10 +92,16 @@ function ConfirmPaymentModal({
 }
 
 export default function PaymentConfirmationPage() {
-    const { payments, isLoading, isProcessingId, confirmCashPayment, refresh } = usePayments();
+    const { payments, isLoading, isError, isProcessingId, confirmCashPayment, refresh } = usePayments();
+    const { currentPage, entriesPerPage, handlePageChange, handleEntriesChange } = useTablePagination(1, 10);
     
-    const [entriesToShow, setEntriesToShow] = useState(10);
     const [confirmTarget, setConfirmTarget] = useState<Payment | null>(null);
+
+    const { paginatedData, totalPages, totalEntries } = calculatePagination(
+        payments,
+        currentPage,
+        entriesPerPage
+    );
 
     const handleConfirmSubmit = async () => {
         if (confirmTarget) {
@@ -134,26 +144,7 @@ export default function PaymentConfirmationPage() {
             <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden relative">
                 
                 {/* Overlay Loading Data */}
-                {isLoading && (
-                    <div className="absolute inset-0 bg-white/50 backdrop-blur-sm flex items-center justify-center z-10">
-                        <RefreshCw className="animate-spin text-[#8C6D56]" size={32} />
-                    </div>
-                )}
-
-                {/* Table Controls */}
-                <div className="px-6 py-5 border-b border-stone-100 flex items-center text-sm text-stone-500 gap-2">
-                    <span>Show</span>
-                    <select
-                        value={entriesToShow}
-                        onChange={(e) => setEntriesToShow(Number(e.target.value))}
-                        className="border border-stone-200 rounded-lg px-2 py-1 text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#8C6D56]/30"
-                    >
-                        <option value={5}>5</option>
-                        <option value={10}>10</option>
-                        <option value={25}>25</option>
-                    </select>
-                    <span>entries</span>
-                </div>
+                {isLoading && <DataTableLoadingOverlay message="Memuat data pembayaran..." />}
 
                 {/* Table */}
                 <div className="overflow-x-auto">
@@ -166,64 +157,59 @@ export default function PaymentConfirmationPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-stone-100">
-                            {payments.length === 0 && !isLoading ? (
-                                <tr>
-                                    <td colSpan={3} className="px-6 py-10 text-center text-stone-400">
-                                        Belum ada tagihan masuk.
+                            {isError && <DataTableError message="Gagal memuat data pembayaran." onRetry={refresh} colSpan={3} />}
+                            {!isError && totalEntries === 0 && !isLoading && <DataTableEmpty message="Belum ada tagihan masuk." colSpan={3} />}
+                            {!isError && !isLoading && paginatedData.map((payment) => (
+                                <tr key={payment.id} className="hover:bg-stone-50/50 transition-colors">
+                                    <td className="px-10 py-5 text-stone-500 font-medium">
+                                        <span className="block text-lg text-stone-800">
+                                            {payment.tableNo.toString().padStart(2, "0")}
+                                        </span>
+                                        <span className="text-[10px] text-stone-400 uppercase tracking-wider font-bold">
+                                            {payment.customer_name}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-5 text-center font-bold text-stone-800">
+                                        {formatRupiah(payment.totalAmount)}
+                                    </td>
+                                    <td className="px-10 py-5">
+                                        <div className="flex justify-end">
+                                            {payment.status === "PENDING" ? (
+                                                <button
+                                                    onClick={() => setConfirmTarget(payment)}
+                                                    className="text-stone-300 hover:text-green-500 transition-colors"
+                                                    title="Konfirmasi Pembayaran"
+                                                >
+                                                    <CheckCircle size={28} strokeWidth={1.5} />
+                                                </button>
+                                            ) : (
+                                                <div 
+                                                    className="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center text-white shadow-sm shadow-green-200"
+                                                    title="Pembayaran Selesai"
+                                                >
+                                                    <Check size={16} strokeWidth={3} />
+                                                </div>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
-                            ) : (
-                                payments.slice(0, entriesToShow).map((payment) => (
-                                    <tr key={payment.id} className="hover:bg-stone-50/50 transition-colors">
-                                        <td className="px-10 py-5 text-stone-500 font-medium">
-                                            <span className="block text-lg text-stone-800">
-                                                {payment.tableNo.toString().padStart(2, "0")}
-                                            </span>
-                                            <span className="text-[10px] text-stone-400 uppercase tracking-wider font-bold">
-                                                {payment.customer_name}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-5 text-center font-bold text-stone-800">
-                                            {formatRupiah(payment.totalAmount)}
-                                        </td>
-                                        <td className="px-10 py-5">
-                                            <div className="flex justify-end">
-                                                {payment.status === "PENDING" ? (
-                                                    <button
-                                                        onClick={() => setConfirmTarget(payment)} // Buka modal
-                                                        className="text-stone-300 hover:text-green-500 transition-colors"
-                                                        title="Konfirmasi Pembayaran"
-                                                    >
-                                                        <CheckCircle size={28} strokeWidth={1.5} />
-                                                    </button>
-                                                ) : (
-                                                    <div 
-                                                        className="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center text-white shadow-sm shadow-green-200"
-                                                        title="Pembayaran Selesai"
-                                                    >
-                                                        <Check size={16} strokeWidth={3} />
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
+                            ))}
                         </tbody>
                     </table>
                 </div>
 
-                {/* Pagination (Client Side) */}
-                <div className="px-6 py-4 border-t border-stone-100 flex items-center justify-between text-xs text-stone-500 bg-white">
-                    <span>
-                        Showing {payments.length > 0 ? 1 : 0} to {Math.min(entriesToShow, payments.length)} of {payments.length} entries
-                    </span>
-                    <div className="flex gap-1">
-                        <button className="w-8 h-8 flex items-center justify-center rounded border border-stone-200 hover:bg-stone-50 transition-colors">&lt;</button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded bg-[#8C6D56] text-white font-medium">1</button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded border border-stone-200 hover:bg-stone-50 transition-colors">&gt;</button>
-                    </div>
-                </div>
+                {/* Pagination Controls */}
+                {!isError && totalEntries > 0 && !isLoading && (
+                    <PaginationControls
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        entriesPerPage={entriesPerPage}
+                        totalEntries={totalEntries}
+                        entriesOptions={[5, 10, 25]}
+                        onPageChange={(page) => handlePageChange(page, totalPages)}
+                        onEntriesChange={handleEntriesChange}
+                    />
+                )}
             </div>
         </div>
     );

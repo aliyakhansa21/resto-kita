@@ -11,7 +11,7 @@ import EmployeePasswordForm from "../components/EmployeePasswordForm";
 type ViewState = "LIST" | "ADD" | "EDIT" | "RESET_PASSWORD";
 
 export default function EmployeeManagementPage() {
-    const { employees, isLoading, isSubmitting, addEmployee, editEmployee, removeEmployee, changePassword } = useEmployees();
+    const { employees, isLoading, isError, isSubmitting, addEmployee, editEmployee, removeEmployee, changePassword, refresh } = useEmployees();
 
     const [view, setView] = useState<ViewState>("LIST");
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
@@ -100,11 +100,38 @@ export default function EmployeeManagementPage() {
                 />
             )}
 
-            {view === "LIST" && <EmployeeList employees={employees} isLoading={isLoading} onAdd={handleOpenAdd} onEdit={handleOpenEdit} onResetPassword={handleOpenResetPassword} onDelete={handleRequestDelete} />}
+            {view === "LIST" && (
+                <EmployeeList 
+                    employees={employees} 
+                    isLoading={isLoading} 
+                    isError={isError} 
+                    onAdd={handleOpenAdd} 
+                    onEdit={handleOpenEdit} 
+                    onResetPassword={handleOpenResetPassword} 
+                    onDelete={handleRequestDelete} 
+                    onRefresh={refresh} 
+                />
+            )}
             
-            {(view === "ADD" || view === "EDIT") && <EmployeeForm view={view} selectedEmployee={selectedEmployee} isSubmitting={isSubmitting} onSubmit={handleFormSubmit} onCancel={() => setView("LIST")} onDelete={handleRequestDelete} />}
+            {(view === "ADD" || view === "EDIT") && (
+                <EmployeeForm 
+                    view={view} 
+                    selectedEmployee={selectedEmployee} 
+                    isSubmitting={isSubmitting} 
+                    onSubmit={handleFormSubmit} 
+                    onCancel={() => setView("LIST")} 
+                    onDelete={handleRequestDelete} 
+                />
+            )}
             
-            {view === "RESET_PASSWORD" && <EmployeePasswordForm selectedEmployee={selectedEmployee} isSubmitting={isSubmitting} onSubmit={handlePasswordSubmit} onCancel={() => setView("LIST")} />}
+            {view === "RESET_PASSWORD" && (
+                <EmployeePasswordForm 
+                    selectedEmployee={selectedEmployee} 
+                    isSubmitting={isSubmitting} 
+                    onSubmit={handlePasswordSubmit} 
+                    onCancel={() => setView("LIST")} 
+                />
+            )}
         </div>
     );
 }

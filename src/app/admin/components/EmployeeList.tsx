@@ -1,16 +1,19 @@
 import { Users, Pencil, Trash2, KeyRound, RefreshCw } from "lucide-react";
 import { Employee } from "@/hooks/useEmployees";
+import { DataTableError, DataTableEmpty } from "./DataTableStates";
 
 interface Props {
     employees: Employee[];
     isLoading: boolean;
+    isError?: boolean;
     onAdd: () => void;
     onEdit: (emp: Employee) => void;
     onResetPassword: (emp: Employee) => void;
-    onDelete: (id: number, name: string) => void; 
+    onDelete: (id: number, name: string) => void;
+    onRefresh?: () => void;
 }
 
-export default function EmployeeList({ employees, isLoading, onAdd, onEdit, onResetPassword, onDelete }: Props) {
+export default function EmployeeList({ employees, isLoading, isError, onAdd, onEdit, onResetPassword, onDelete, onRefresh }: Props) {
     return (
         <div className="p-6 sm:p-10 space-y-8 w-full max-w-6xl mx-auto">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -56,12 +59,9 @@ export default function EmployeeList({ employees, isLoading, onAdd, onEdit, onRe
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-stone-100">
-                            {employees.length === 0 && !isLoading ? (
-                                <tr>
-                                    <td colSpan={5} className="px-6 py-10 text-center text-stone-400">Belum ada data karyawan.</td>
-                                </tr>
-                            ) : (
-                                employees.map((emp, idx) => (
+                            {isError && <DataTableError message="Gagal memuat data karyawan." onRetry={onRefresh} colSpan={5} />}
+                            {!isError && employees.length === 0 && !isLoading && <DataTableEmpty message="Belum ada data karyawan." colSpan={5} />}
+                            {!isError && !isLoading && employees.map((emp, idx) => (
                                     <tr key={emp.id} className="hover:bg-stone-50/50 transition-colors">
                                         <td className="px-6 py-4 text-[#2D1603]">{(idx + 1).toString().padStart(2, '0')}</td>
                                         <td className="px-6 py-4">
@@ -88,8 +88,7 @@ export default function EmployeeList({ employees, isLoading, onAdd, onEdit, onRe
                                             </div>
                                         </td>
                                     </tr>
-                                ))
-                            )}
+                            ))}
                         </tbody>
                     </table>
                 </div>

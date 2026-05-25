@@ -5,6 +5,8 @@ import { Plus, Pencil, Trash2, Search, X, Save, AlertTriangle } from "lucide-rea
 import { useAdminCategories } from "@/hooks/useAdminCategories";
 import { cn } from "@/lib/utils";
 import type { Category } from "@/types";
+import { DataTableLoading } from "@/app/admin/components/DataTableLoading";
+import { DataTableError, DataTableEmpty } from "@/app/admin/components/DataTableStates";
 
 type ModalMode = "add" | "edit" | null;
 
@@ -93,6 +95,8 @@ export default function ManajemenKategoriPage() {
     const {
         categories,
         isLoading,
+        isError,
+        refetch,
         createCategory,
         updateCategory,
         deleteCategory,
@@ -264,52 +268,54 @@ export default function ManajemenKategoriPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-stone-100">
-                            {isLoading ? (
-                                <tr>
-                                    <td colSpan={4} className="px-6 py-12 text-center text-sm text-stone-500 animate-pulse">
-                                        Memuat data kategori...
-                                    </td>
+                            {isError && <DataTableError message="Gagal memuat data kategori." onRetry={() => refetch()} colSpan={4} />}
+                            {!isError && isLoading && Array.from({ length: 5 }).map((_, i) => (
+                                <tr key={i} className="animate-pulse">
+                                    {Array.from({ length: 4 }).map((_, j) => (
+                                        <td key={j} className="px-6 py-4">
+                                            <div className="h-4 bg-gray-200 rounded" />
+                                        </td>
+                                    ))}
                                 </tr>
-                            ) : paginated.length === 0 ? (
-                                <tr>
-                                    <td colSpan={4} className="px-6 py-12 text-center text-sm text-stone-500">
-                                        {search ? "Kategori tidak ditemukan." : "Belum ada kategori."}
-                                    </td>
-                                </tr>
-                            ) : (
-                                paginated.map((cat, idx) => (
-                                    <tr key={cat.id} className="hover:bg-stone-50/50 transition-colors duration-150 group">
-                                        <td className="px-6 py-4 text-sm text-stone-500 w-16">
-                                            {(currentPage - 1) * perPage + idx + 1}
-                                        </td>
-                                        <td className="px-6 py-4 text-sm font-semibold text-stone-900">
-                                            {cat.name}
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-stone-500">
-                                            {cat.description || "-"}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    onClick={() => openEdit(cat)}
-                                                    className="p-2 text-stone-400 hover:text-primary-50 hover:bg-primary-10/20 rounded-md transition-colors"
-                                                    title="Edit Kategori"
-                                                >
-                                                    <Pencil size={18} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(cat)}
-                                                    disabled={isDeleting}
-                                                    className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-wait"
-                                                    title="Hapus Kategori"
-                                                >
-                                                    <Trash2 size={18} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
+                            ))}
+                            {!isError && !isLoading && paginated.length === 0 && (
+                                <DataTableEmpty 
+                                    message={search ? "Kategori tidak ditemukan." : "Belum ada kategori."} 
+                                    colSpan={4} 
+                                />
                             )}
+                            {!isError && !isLoading && paginated.map((cat: Category, idx: number) => (
+                                <tr key={cat.id} className="hover:bg-stone-50/50 transition-colors duration-150 group">
+                                    <td className="px-6 py-4 text-sm text-stone-500 w-16">
+                                        {(currentPage - 1) * perPage + idx + 1}
+                                    </td>
+                                    <td className="px-6 py-4 text-sm font-semibold text-stone-900">
+                                        {cat.name}
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-stone-500">
+                                        {cat.description || "-"}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => openEdit(cat)}
+                                                className="p-2 text-stone-400 hover:text-primary-50 hover:bg-primary-10/20 rounded-md transition-colors"
+                                                title="Edit Kategori"
+                                            >
+                                                <Pencil size={18} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(cat)}
+                                                disabled={isDeleting}
+                                                className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-wait"
+                                                title="Hapus Kategori"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
                 </div>

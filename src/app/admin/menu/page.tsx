@@ -6,6 +6,8 @@ import { Plus, Pencil, Trash2, AlertTriangle, X } from "lucide-react";
 import { useAdminMenu, type AdminMenuItem } from "@/hooks/useAdminMenu";
 import { formatCurrency, cn } from "@/lib/utils";
 import { getCategoryColor } from "@/utils/categoryColor";
+import { DataTableLoading } from "@/app/admin/components/DataTableLoading";
+import { DataTableError, DataTableEmpty } from "@/app/admin/components/DataTableStates";
 
 // Delete Confirmation Modal 
 function DeleteConfirmModal({
@@ -102,6 +104,8 @@ export default function DaftarMenuPage() {
         items,
         meta,
         isLoading,
+        isError,
+        refetch,
         toggleStatus,
         isToggling,
         deleteItem,
@@ -185,20 +189,18 @@ export default function DaftarMenuPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-stone-100">
-                            {isLoading ? (
-                                <tr>
-                                    <td colSpan={8} className="px-6 py-12 text-center text-sm text-stone-500 animate-pulse">
-                                        Memuat data menu...
-                                    </td>
+                            {isError && <DataTableError message="Gagal memuat data menu." onRetry={() => refetch()} colSpan={8} />}
+                            {!isError && isLoading && Array.from({ length: 5 }).map((_, i) => (
+                                <tr key={i} className="animate-pulse">
+                                    {Array.from({ length: 8 }).map((_, j) => (
+                                        <td key={j} className="px-6 py-4">
+                                            <div className="h-4 bg-gray-200 rounded" />
+                                        </td>
+                                    ))}
                                 </tr>
-                            ) : items.length === 0 ? (
-                                <tr>
-                                    <td colSpan={8} className="px-6 py-12 text-center text-sm text-stone-500">
-                                        Tidak ada data menu yang ditemukan.
-                                    </td>
-                                </tr>
-                            ) : (
-                                items.map((item: AdminMenuItem, idx: number) => (
+                            ))}
+                            {!isError && !isLoading && items.length === 0 && <DataTableEmpty message="Tidak ada data menu yang ditemukan." colSpan={8} />}
+                            {!isError && !isLoading && items.map((item: AdminMenuItem, idx: number) => (
                                     <tr key={item.id} className="hover:bg-stone-50/50 transition-colors duration-150 group">
                                         <td className="px-6 py-4 text-sm text-stone-500">
                                             {(currentPage - 1) * perPage + idx + 1}
@@ -268,8 +270,7 @@ export default function DaftarMenuPage() {
                                             </div>
                                         </td>
                                     </tr>
-                                ))
-                            )}
+                            ))}
                         </tbody>
                     </table>
                 </div>

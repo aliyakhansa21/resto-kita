@@ -4,6 +4,7 @@ import { useAdminOrders } from "@/hooks/useAdminOrders";
 import Link from "next/link";
 import dayjs from "dayjs";
 import { useState } from "react";
+import { DataTableError, DataTableEmpty } from "@/app/admin/components/DataTableStates";
 
 const ENTRIES_OPTIONS = [5, 10, 25, 50];
 
@@ -47,7 +48,7 @@ const formatPaymentMethod = (method: string) => {
 };
 
 export default function PesananPage() {
-  const { data: orders, isLoading, isError } = useAdminOrders();
+  const { data: orders, isLoading, isError, refetch } = useAdminOrders();
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -176,12 +177,11 @@ export default function PesananPage() {
               </tr>
             </thead>
             <tbody className="text-sm text-gray-700">
-
               {/* Loading State */}
               {isLoading &&
                 [...Array(5)].map((_, i) => (
                   <tr key={i} className="border-b border-gray-50 animate-pulse">
-                    {[...Array(10)].map((_, j) => (
+                    {[...Array(9)].map((_, j) => (
                       <td key={j} className="py-5 px-5">
                         <div className="h-3.5 bg-gray-100 rounded-full" />
                       </td>
@@ -189,34 +189,9 @@ export default function PesananPage() {
                   </tr>
                 ))}
 
-              {/* Error State */}
-              {isError && (
-                <tr>
-                  <td colSpan={10} className="py-16 text-center">
-                    <div className="flex flex-col items-center gap-2">
-                      <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <p className="text-gray-500 font-medium">Gagal memuat data pesanan</p>
-                      <p className="text-gray-400 text-xs">Silakan coba lagi beberapa saat</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-
-              {/* Empty State */}
-              {!isLoading && !isError && paginatedOrders.length === 0 && (
-                <tr>
-                  <td colSpan={10} className="py-16 text-center">
-                    <div className="flex flex-col items-center gap-2">
-                      <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                      </svg>
-                      <p className="text-gray-500 font-medium">Belum ada pesanan</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
+              {/* Error & Empty States */}
+              {!isLoading && isError && <DataTableError message="Gagal memuat data pesanan." onRetry={() => refetch()} colSpan={9} />}
+              {!isLoading && !isError && paginatedOrders.length === 0 && <DataTableEmpty message="Belum ada pesanan." colSpan={9} />}
 
               {/* Data Rows */}
               {!isLoading &&
