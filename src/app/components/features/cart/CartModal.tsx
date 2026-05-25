@@ -75,7 +75,7 @@ export function CartModal({
             clearCart();
             onClose();
             
-            router.push(`/checkout?token=${tableToken}&table=${tableNumber}&name=${encodeURIComponent(customerName)}`);
+            router.push(`/orders`);
             
         } catch (err) {
             setPlaceError(

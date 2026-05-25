@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useCheckout } from "@/hooks/useCheckout";
 import { useOrders } from "@/hooks/useOrders";
 import { CheckoutForm } from "@/app/components/features/checkout/CheckoutForm";
@@ -15,14 +15,24 @@ import { Receipt, CreditCard, Info } from "lucide-react";
 const fmt = (val: number): string =>
   "Rp" + val.toLocaleString("id-ID").replace(/,/g, ".");
 
-function CheckoutContent() {
-  const searchParams = useSearchParams();
+export default function CheckoutPage() {
   const router = useRouter();
 
-  const token = searchParams.get("token") ?? "";
-  const tableNumber = searchParams.get("table") ?? "07";
-  
-  const customerName = searchParams.get("name") ?? "Pelanggan"; 
+  // Ambil data sesi dari sessionStorage 
+  const [token, setToken] = useState("");
+  const [tableNumber, setTableNumber] = useState("07");
+  const [customerName, setCustomerName] = useState("Pelanggan");
+  const [sessionLoaded, setSessionLoaded] = useState(false);
+
+  useEffect(() => {
+    const storedToken = sessionStorage.getItem("tableToken") ?? "";
+    const storedTable = sessionStorage.getItem("tableNumber") ?? "07";
+    const storedName = sessionStorage.getItem("customerName") ?? "Pelanggan";
+    setToken(storedToken);
+    setTableNumber(storedTable);
+    setCustomerName(storedName);
+    setSessionLoaded(true);
+  }, []);
 
   // Order summary dari API (sudah di-place sebelumnya di CartModal)
   const { orders, loading: ordersLoading, grandTotal } = useOrders();
@@ -43,7 +53,7 @@ function CheckoutContent() {
     payment,
   } = useCheckout(token, tableNumber, customerName);
 
-  // Non-Cash: sedang proses Midtrans 
+  // Non-Cash: sedang proses Midtrans
   // Tampil saat: creating snap token, waiting (popup terbuka), polling status
   const isNonCashProcessing =
     completedOrder?.paymentMethod === "non_cash" &&
@@ -78,7 +88,7 @@ function CheckoutContent() {
     );
   }
 
-  // Order Detail 
+  // Order Detail
   // Tampil saat:
   // - Cash: langsung setelah confirm (completedOrder ada, paymentMethod = cash)
   // - Non-Cash: setelah polling konfirmasi "paid"
@@ -108,7 +118,7 @@ function CheckoutContent() {
     );
   }
 
-  // Checkout Form 
+  // Checkout Form
   return (
     <div className="min-h-screen flex flex-col bg-[#FAF7F2]">
       <Navbar tableNumber={tableNumber} cartCount={0} onCartClick={() => {}} />
@@ -213,7 +223,7 @@ function CheckoutContent() {
 
               <button
                 onClick={handleSubmit}
-                disabled={submitting || ordersLoading}
+                disabled={submitting || ordersLoading || !sessionLoaded}
                 className="mt-5 w-full bg-primary text-white font-bold text-base rounded-xl py-4 hover:bg-primary-10 active:bg-primary-20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {submitting ? (
@@ -238,17 +248,5 @@ function CheckoutContent() {
       </main>
       <Footer />
     </div>
-  );
-}
-
-export default function CheckoutPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-secondary-DEFAULT/20 text-primary-50">
-        Memuat halaman checkout...
-      </div>
-    }>
-      <CheckoutContent />
-    </Suspense>
   );
 }
