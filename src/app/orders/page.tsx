@@ -102,7 +102,7 @@ export default function OrdersPage() {
                             <div className="flex gap-3 mt-4">
                                 {/* Tambah pesanan → balik ke menu */}
                                 <button
-                                    onClick={() => router.push(`/menu`)}
+                                    onClick={() => router.push(`/`)}
                                     className="flex-1 border-2 border-primary text-primary font-bold text-base rounded-full py-3 flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-all"
                                 >
                                     <span>+</span> Add More Items
