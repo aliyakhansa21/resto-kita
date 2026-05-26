@@ -36,7 +36,7 @@ export default function EmployeeList({ employees, isLoading, isError, onAdd, onE
                         {isLoading ? "..." : employees.length}
                     </span>
                     {!isLoading && employees.length > 0 && (
-                        <span className="text-[#4A5D23] text-sm font-bold mb-1">+3~</span>
+                        <span className="text-[#4A5D23] text-sm font-bold mb-1"></span>
                     )}
                 </div>
             </div>

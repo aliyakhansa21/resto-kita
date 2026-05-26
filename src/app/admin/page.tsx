@@ -60,7 +60,7 @@ export default function DashboardPage() {
                 <div className="p-3 bg-primary/10 text-primary rounded-xl">
                 <ClipboardList className="w-6 h-6" />
                 </div>
-                <span className="text-xs font-bold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">+12%</span>
+                {/* <span className="text-xs font-bold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">+12%</span> */}
             </div>
             <div>
                 <p className="text-sm font-medium text-gray-500 mb-1">Pesanan hari ini</p>
@@ -74,7 +74,7 @@ export default function DashboardPage() {
                 <div className="p-3 bg-primary/10 text-primary rounded-xl">
                 <Banknote className="w-6 h-6" />
                 </div>
-                <span className="text-xs font-bold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">+5%</span>
+                {/* <span className="text-xs font-bold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">+5%</span> */}
             </div>
             <div>
                 <p className="text-sm font-medium text-gray-500 mb-1">Pendapatan hari ini</p>
@@ -88,7 +88,7 @@ export default function DashboardPage() {
                 <div className="p-3 bg-primary/10 text-primary rounded-xl">
                 <ShoppingCart className="w-6 h-6" />
                 </div>
-                <span className="text-xs font-bold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">+8%</span>
+                {/* <span className="text-xs font-bold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">+8%</span> */}
             </div>
             <div>
                 <p className="text-sm font-medium text-gray-500 mb-1">Total pesanan</p>
@@ -102,7 +102,7 @@ export default function DashboardPage() {
                 <div className="p-3 bg-primary/10 text-primary rounded-xl">
                 <Wallet className="w-6 h-6" />
                 </div>
-                <span className="text-xs font-bold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">+15%</span>
+                {/* <span className="text-xs font-bold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">+15%</span> */}
             </div>
             <div>
                 <p className="text-sm font-medium text-gray-500 mb-1">Total pendapatan</p>
