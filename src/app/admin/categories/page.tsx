@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Plus, Pencil, Trash2, Search, X, Save, AlertTriangle } from "lucide-react";
 import { useAdminCategories } from "@/hooks/useAdminCategories";
+import { useTablePagination, calculatePagination } from "@/hooks/useTablePagination";
+import { PaginationControls } from "@/app/admin/components/PaginationControls";
 import { cn } from "@/lib/utils";
 import type { Category } from "@/types";
 import { DataTableLoading } from "@/app/admin/components/DataTableLoading";
@@ -105,10 +107,11 @@ export default function ManajemenKategoriPage() {
         isDeleting
     } = useAdminCategories();
 
-    // States for Client-Side Filtering & Pagination
+    // Hook Pagination
+    const { currentPage, entriesPerPage, handlePageChange, handleEntriesChange } = useTablePagination(1, 10);
+
+    // States for Client-Side Filtering
     const [search, setSearch] = useState("");
-    const [perPage, setPerPage] = useState(10);
-    const [currentPage, setCurrentPage] = useState(1);
 
     // States for Modal
     const [modalMode, setModalMode] = useState<ModalMode>(null);
@@ -119,14 +122,17 @@ export default function ManajemenKategoriPage() {
     // States for Delete Modal
     const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
-    // Filtering Logic
+    // Filtering & Pagination Logic
     const filtered = categories.filter((c) =>
         c.name.toLowerCase().includes(search.toLowerCase()) ||
         (c.description ?? "").toLowerCase().includes(search.toLowerCase())
     );
-    const totalPages = Math.ceil(filtered.length / perPage);
-    const paginated = filtered.slice((currentPage - 1) * perPage, currentPage * perPage);
-    const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+
+    const { paginatedData, totalPages, totalEntries } = calculatePagination(
+        filtered,
+        currentPage,
+        entriesPerPage
+    );
 
     // Modal Handlers
     const openAdd = () => {
@@ -168,7 +174,7 @@ export default function ManajemenKategoriPage() {
                 await updateCategory({ id: editingId, payload: modalData });
             }
             closeModal();
-            setCurrentPage(1);
+            handlePageChange(1, totalPages); // Reset ke halaman pertama setelah simpan
         } catch (err: any) {
             alert(err.message || "Gagal menyimpan kategori.");
         }
@@ -202,6 +208,7 @@ export default function ManajemenKategoriPage() {
                     isDeleting={isDeleting}
                 />
             )}
+            
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
@@ -220,31 +227,14 @@ export default function ManajemenKategoriPage() {
             {/* Table Card */}
             <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm">
                 {/* Controls */}
-                <div className="px-6 py-4 border-b border-stone-100 flex flex-wrap items-center justify-between gap-4 bg-stone-50/50">
-                    <div className="flex items-center gap-3">
-                        <span className="text-sm text-stone-500">Tampilkan</span>
-                        <select
-                            value={perPage}
-                            onChange={(e) => {
-                                setPerPage(Number(e.target.value));
-                                setCurrentPage(1);
-                            }}
-                            className="border border-stone-300 rounded-md px-3 py-1.5 text-sm text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary-10"
-                        >
-                            {[10, 25, 50].map((n) => (
-                                <option key={n} value={n}>{n}</option>
-                            ))}
-                        </select>
-                        <span className="text-sm text-stone-500">entri</span>
-                    </div>
-
+                <div className="px-6 py-4 border-b border-stone-100 flex flex-wrap items-center justify-end gap-4 bg-stone-50/50">
                     <div className="relative">
                         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
                         <input
                             value={search}
                             onChange={(e) => {
                                 setSearch(e.target.value);
-                                setCurrentPage(1);
+                                handlePageChange(1, totalPages); // Reset page saat mencari
                             }}
                             placeholder="Cari kategori..."
                             className="pl-9 pr-4 py-2 border border-stone-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-10 w-full sm:w-64"
@@ -278,16 +268,16 @@ export default function ManajemenKategoriPage() {
                                     ))}
                                 </tr>
                             ))}
-                            {!isError && !isLoading && paginated.length === 0 && (
+                            {!isError && !isLoading && totalEntries === 0 && (
                                 <DataTableEmpty 
                                     message={search ? "Kategori tidak ditemukan." : "Belum ada kategori."} 
                                     colSpan={4} 
                                 />
                             )}
-                            {!isError && !isLoading && paginated.map((cat: Category, idx: number) => (
+                            {!isError && !isLoading && paginatedData.map((cat: Category, idx: number) => (
                                 <tr key={cat.id} className="hover:bg-stone-50/50 transition-colors duration-150 group">
                                     <td className="px-6 py-4 text-sm text-stone-500 w-16">
-                                        {(currentPage - 1) * perPage + idx + 1}
+                                        {(currentPage - 1) * entriesPerPage + idx + 1}
                                     </td>
                                     <td className="px-6 py-4 text-sm font-semibold text-stone-900">
                                         {cat.name}
@@ -320,33 +310,17 @@ export default function ManajemenKategoriPage() {
                     </table>
                 </div>
 
-                {/* Pagination */}
-                {!isLoading && filtered.length > 0 && (
-                    <div className="px-6 py-4 border-t border-stone-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-stone-50/50">
-                        <span className="text-sm text-stone-500">
-                            Menampilkan <span className="font-semibold text-stone-900">{Math.min((currentPage - 1) * perPage + 1, filtered.length)}</span> sampai <span className="font-semibold text-stone-900">{Math.min(currentPage * perPage, filtered.length)}</span> dari <span className="font-semibold text-stone-900">{filtered.length}</span> entri
-                        </span>
-                        <div className="flex items-center gap-1.5">
-                            <PageBtn
-                                label="Prev"
-                                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                                disabled={currentPage === 1}
-                            />
-                            {pages.map((p) => (
-                                <PageBtn
-                                    key={p}
-                                    label={String(p)}
-                                    onClick={() => setCurrentPage(p)}
-                                    active={p === currentPage}
-                                />
-                            ))}
-                            <PageBtn
-                                label="Next"
-                                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                                disabled={currentPage === totalPages}
-                            />
-                        </div>
-                    </div>
+                {/* Pagination Controls */}
+                {!isError && totalEntries > 0 && !isLoading && (
+                    <PaginationControls
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        entriesPerPage={entriesPerPage}
+                        totalEntries={totalEntries}
+                        entriesOptions={[10, 25, 50]}
+                        onPageChange={(page) => handlePageChange(page, totalPages)}
+                        onEntriesChange={handleEntriesChange}
+                    />
                 )}
             </div>
 
@@ -415,24 +389,5 @@ export default function ManajemenKategoriPage() {
                 </div>
             )}
         </div>
-    );
-}
-
-// Sub-komponen Pagination
-function PageBtn({ label, onClick, disabled, active }: { label: string; onClick: () => void; disabled?: boolean; active?: boolean; }) {
-    return (
-        <button
-            onClick={onClick}
-            disabled={disabled}
-            className={cn(
-                "px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200",
-                active
-                    ? "bg-primary text-white shadow-sm"
-                    : "bg-white border border-stone-200 text-stone-600 hover:bg-stone-50",
-                disabled && "opacity-50 cursor-not-allowed hover:bg-white"
-            )}
-        >
-            {label}
-        </button>
     );
 }

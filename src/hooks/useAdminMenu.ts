@@ -29,11 +29,11 @@ interface AdminMenuResponse {
 }
 
 interface UseAdminMenuParams {
-    page: number;
-    perPage: number;
+    page?: number;
+    perPage?: number;
 }
 
-export function useAdminMenu({ page, perPage }: UseAdminMenuParams) {
+export function useAdminMenu({ page = 1, perPage = 1000 }: UseAdminMenuParams = {}) {
     const queryClient = useQueryClient();
     const queryKey = ["admin-menu-items", page, perPage];
 
