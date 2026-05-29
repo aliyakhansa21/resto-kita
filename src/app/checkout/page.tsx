@@ -18,23 +18,22 @@ const fmt = (val: number): string =>
 export default function CheckoutPage() {
   const router = useRouter();
 
-  // Ambil data sesi dari sessionStorage 
   const [token, setToken] = useState("");
-  const [tableNumber, setTableNumber] = useState("07");
-  const [customerName, setCustomerName] = useState("Pelanggan");
+  const [tableNumber, setTableNumber] = useState(""); 
+  const [customerName, setCustomerName] = useState("");
   const [sessionLoaded, setSessionLoaded] = useState(false);
 
   useEffect(() => {
     const storedToken = sessionStorage.getItem("tableToken") ?? "";
-    const storedTable = sessionStorage.getItem("tableNumber") ?? "07";
+    const storedTable = sessionStorage.getItem("tableNumber") ?? "";
     const storedName = sessionStorage.getItem("customerName") ?? "Pelanggan";
+    
     setToken(storedToken);
     setTableNumber(storedTable);
     setCustomerName(storedName);
     setSessionLoaded(true);
   }, []);
 
-  // Order summary dari API (sudah di-place sebelumnya di CartModal)
   const { orders, loading: ordersLoading, grandTotal } = useOrders();
   const tax = grandTotal * 0.1;
   const totalWithTax = grandTotal + tax;
@@ -53,8 +52,6 @@ export default function CheckoutPage() {
     payment,
   } = useCheckout(token, tableNumber, customerName);
 
-  // Non-Cash: sedang proses Midtrans
-  // Tampil saat: creating snap token, waiting (popup terbuka), polling status
   const isNonCashProcessing =
     completedOrder?.paymentMethod === "non_cash" &&
     payment.paymentState !== "idle" &&
@@ -88,10 +85,6 @@ export default function CheckoutPage() {
     );
   }
 
-  // Order Detail
-  // Tampil saat:
-  // - Cash: langsung setelah confirm (completedOrder ada, paymentMethod = cash)
-  // - Non-Cash: setelah polling konfirmasi "paid"
   if (
     completedOrder &&
     (completedOrder.paymentMethod === "cash" || payment.paymentState === "paid")
@@ -109,7 +102,7 @@ export default function CheckoutPage() {
             paymentMethod={completedOrder.paymentMethod}
             onBack={() => {
               reset();
-              router.push("/menu");
+              router.push("/");
             }}
           />
         </main>
@@ -118,23 +111,21 @@ export default function CheckoutPage() {
     );
   }
 
-  // Checkout Form
   return (
     <div className="min-h-screen flex flex-col bg-[#FAF7F2]">
-      <Navbar tableNumber={tableNumber} cartCount={0} onCartClick={() => {}} />
+      <Navbar tableNumber={tableNumber} cartCount={0} onCartClick={() => router.push("/")} />
 
-      <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-24">
+      <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-24 relative">
         <h1 className="text-h2 text-primary-50 mb-1">Checkout</h1>
         <p className="text-base text-secondary-50 mb-8">
           Please review your order and complete your details.
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-7 items-start">
-          {/* ── Left ── */}
+          {/* ── Sisi Kiri: Form & Ringkasan ── */}
           <div className="flex flex-col gap-6">
             <CheckoutForm form={form} setForm={setForm} errors={formErrors} />
 
-            {/* Order Summary */}
             <section className="bg-white rounded-2xl shadow-md p-7">
               <h2 className="flex items-center gap-2 font-bold text-base text-primary-50 mb-5">
                 <Receipt className="w-5 h-5 text-primary" /> Order Summary
@@ -179,7 +170,7 @@ export default function CheckoutPage() {
             </section>
           </div>
 
-          {/* Right: Payment */}
+          {/* ── Sisi Kanan: Metode Pembayaran & Total ── */}
           <div className="lg:sticky lg:top-24">
             <section className="bg-white rounded-2xl shadow-md p-7">
               <h2 className="flex items-center gap-2 font-bold text-base text-primary-50 mb-5">
@@ -188,7 +179,6 @@ export default function CheckoutPage() {
 
               <PaymentSelector selected={paymentMethod} onChange={setPaymentMethod} />
 
-              {/* Totals */}
               <div className="flex flex-col gap-2 border-t border-secondary-20 pt-4">
                 <div className="flex justify-between text-base text-secondary-50">
                   <span>Subtotal</span>
@@ -204,7 +194,6 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Info Non-Cash */}
               {paymentMethod === "non_cash" && (
                 <div className="mt-4 bg-secondary-DEFAULT/20 rounded-xl px-4 py-3 text-text-xs text-secondary-50 leading-relaxed flex items-start gap-2">
                   <Info className="w-4 h-4 flex-shrink-0 mt-0.5 text-secondary-50" />
@@ -222,7 +211,7 @@ export default function CheckoutPage() {
               )}
 
               <button
-                onClick={handleSubmit}
+                onClick={handleSubmit} 
                 disabled={submitting || ordersLoading || !sessionLoaded}
                 className="mt-5 w-full bg-primary text-white font-bold text-base rounded-xl py-4 hover:bg-primary-10 active:bg-primary-20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >

@@ -26,7 +26,7 @@ export function Navbar({ tableNumber, onCartClick, cartCount }: NavbarProps) {
     const handleOrdersClick = () => {
         const token = sessionStorage.getItem("tableToken") ?? "";
         if (token) {
-            router.push(`/orders?table=${tableNumber}&token=${token}`);
+            router.push(`/orders`);
         }
     };
 

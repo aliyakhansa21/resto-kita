@@ -44,10 +44,13 @@ export function useCheckout(token: string, initialTable?: string, initialName?: 
 
   useEffect(() => {
     const storedName = sessionStorage.getItem("customerName");
+    const storedTable = sessionStorage.getItem("tableNumber");
     
-    if (storedName) {
-      setForm((prev) => ({ ...prev, name: storedName }));
-    }
+    setForm((prev) => ({
+      ...prev,
+      name: storedName || prev.name,
+      table: storedTable || prev.table, 
+    }));
   }, []);
 
   const validate = (): CheckoutFormErrors => {

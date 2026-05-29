@@ -1,43 +1,64 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation"; // <-- Import useSearchParams
 import { useOrders } from "@/hooks/useOrders";
+import { useCart } from "@/context/CartContext";
 import OrderCard from "@/app/components/features/orders/OrderCard";
 import { Navbar } from "@/app/components/shared/Navbar";
 import { Footer } from "@/app/components/shared/Footer";
-import { AlertTriangle, UtensilsCrossed, RefreshCw } from "lucide-react"; 
+import { AlertTriangle, UtensilsCrossed, RefreshCw, ShoppingCart } from "lucide-react"; 
 
 const fmt = (val: number): string => "Rp" + val.toLocaleString("id-ID").replace(/,/g, ".");
 
-export default function OrdersPage() {
+function OrdersContent() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const { totalItems } = useCart(); 
 
     const [tableNumber, setTableNumber] = useState("");
     const [token, setToken] = useState("");
     const [isSessionReady, setIsSessionReady] = useState(false);
+    const [showCartWarning, setShowCartWarning] = useState(false); 
 
     useEffect(() => {
+        const urlToken = searchParams.get("token");
+        const urlTable = searchParams.get("table");
+
+        if (urlToken) {
+            sessionStorage.setItem("tableToken", urlToken);
+            if (urlTable) sessionStorage.setItem("tableNumber", urlTable);
+            router.replace("/orders");
+            return;
+        }
+
         const storedToken = sessionStorage.getItem("tableToken") ?? "";
         const storedTable = sessionStorage.getItem("tableNumber") ?? "";
         setToken(storedToken);
         setTableNumber(storedTable);
         setIsSessionReady(true);
-    }, []);
+    }, [searchParams, router]);
 
     const { orders, loading, error, grandTotal, refetch } = useOrders();
 
-    // Logika Gatekeeper
     const isMissingToken = isSessionReady && !token;
     const isBackendSessionError = error?.toLowerCase().includes("tablesession");
     const showInvalidSessionUI = isMissingToken || isBackendSessionError;
+
+    const handleProceedCheckout = () => {
+        if (totalItems > 0) {
+            setShowCartWarning(true);
+        } else {
+            router.push(`/checkout`);
+        }
+    };
 
     return (
         <div className="min-h-screen flex flex-col bg-[#8A5E3D0D]">
             <Navbar
                 tableNumber={tableNumber}
-                cartCount={0}
-                onCartClick={() => {}}
+                cartCount={totalItems}
+                onCartClick={() => router.push("/")}
             />
 
             <main className="flex-1 max-w-2xl mx-auto w-full px-6 py-24">
@@ -77,17 +98,13 @@ export default function OrdersPage() {
                 {/* Konten Utama (Hanya Tampil Jika Sesi Valid) */}
                 {isSessionReady && !showInvalidSessionUI && (
                     <>
-                        {/* Loading Orders */}
                         {loading && (
                             <div className="flex flex-col items-center justify-center py-20 gap-3">
                                 <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                                <p className="text-base text-secondary-50 animate-pulse">
-                                    Memuat pesanan...
-                                </p>
+                                <p className="text-base text-secondary-50 animate-pulse">Memuat pesanan...</p>
                             </div>
                         )}
 
-                        {/* Error Fetching (Bukan masalah Token) */}
                         {!loading && error && !isBackendSessionError && (
                             <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
                                 <div className="bg-white rounded-3xl shadow-lg border border-red-100 max-w-md w-full p-8 text-center">
@@ -100,14 +117,12 @@ export default function OrdersPage() {
                                         onClick={refetch}
                                         className="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-xl bg-red-500 hover:bg-red-600 active:scale-95 text-white font-semibold text-sm transition-all duration-150 shadow-md shadow-red-200"
                                     >
-                                        <RefreshCw size={18} />
-                                        Coba Lagi
+                                        <RefreshCw size={18} /> Coba Lagi
                                     </button>
                                 </div>
                             </div>
                         )}
 
-                        {/* Empty State (Belum ada pesanan) */}
                         {!loading && !error && orders.length === 0 && (
                             <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
                                 <div className="bg-white rounded-3xl shadow-lg border border-stone-100 max-w-md w-full p-8 text-center">
@@ -119,7 +134,7 @@ export default function OrdersPage() {
                                         Kamu belum memesan menu apapun. Yuk, lihat menu lezat kami dan mulai pesan sekarang!
                                     </p>
                                     <button
-                                        onClick={() => router.push(`/menu`)}
+                                        onClick={() => router.push(`/`)}
                                         className="w-full bg-primary text-white font-bold text-sm rounded-xl px-6 py-3 hover:bg-primary-10 transition-colors shadow-md shadow-primary/20"
                                     >
                                         Lihat Menu
@@ -128,14 +143,12 @@ export default function OrdersPage() {
                             </div>
                         )}
 
-                        {/* Order List */}
                         {!loading && !error && orders.length > 0 && (
                             <div className="flex flex-col gap-4">
                                 {orders.map((order, i) => (
                                     <OrderCard key={order.id} order={order} index={i + 1} />
                                 ))}
 
-                                {/* Summary & Actions */}
                                 <div className="bg-white rounded-3xl shadow-sm p-5 mt-2">
                                     <div className="flex justify-between text-base text-[#475569] mb-2">
                                         <span>Subtotal</span>
@@ -155,7 +168,7 @@ export default function OrdersPage() {
                                         </button>
 
                                         <button
-                                            onClick={() => router.push(`/checkout`)}
+                                            onClick={handleProceedCheckout}
                                             className="flex-1 bg-primary text-white font-bold text-sm sm:text-base rounded-full py-3 flex items-center justify-center gap-2 hover:bg-primary-10 transition-colors"
                                         >
                                             <span>✓</span> Proceed Checkout
@@ -169,6 +182,51 @@ export default function OrdersPage() {
             </main>
 
             <Footer />
+
+            {showCartWarning && (
+                <div 
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-sm"
+                    onClick={(e) => { if (e.target === e.currentTarget) setShowCartWarning(false) }}
+                >
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center animate-in fade-in zoom-in-95 duration-200">
+                        <div className="w-16 h-16 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <ShoppingCart size={32} />
+                        </div>
+                        <h3 className="text-lg font-bold text-stone-800 mb-2">Keranjang Belum Dipesan</h3>
+                        <p className="text-sm text-stone-500 leading-relaxed mb-6">
+                            Kamu masih memiliki <span className="font-bold text-stone-800">{totalItems} item</span> di keranjang yang belum di-Order. Jika lanjut checkout, item di keranjang <span className="font-bold text-red-500">tidak akan masuk</span> ke tagihan.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <button
+                                onClick={() => {
+                                    setShowCartWarning(false);
+                                    router.push("/");
+                                }}
+                                className="flex-1 py-2.5 px-4 bg-white border border-stone-200 text-stone-600 font-semibold text-sm rounded-xl hover:bg-stone-50 transition-colors"
+                            >
+                                Cek Keranjang
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowCartWarning(false);
+                                    router.push(`/checkout`);
+                                }}
+                                className="flex-1 py-2.5 px-4 bg-primary text-white font-semibold text-sm rounded-xl hover:bg-primary-30 transition-colors"
+                            >
+                                Lanjut Checkout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
+    );
+}
+
+export default function OrdersPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#8A5E3D0D]">Memuat pesanan...</div>}>
+            <OrdersContent />
+        </Suspense>
     );
 }
