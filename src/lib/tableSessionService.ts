@@ -6,7 +6,7 @@ export async function getMasterTables(): Promise<{ id: number; number: number }[
         const { data } = await api.get<{ data: { id: number; number: number }[] }>("/admin/tables");
         return data.data;
     } catch (error) {
-        console.warn("Gagal mengambil master meja (mungkin endpoint belum ada), menggunakan data dummy sementara.");
+        console.warn("Gagal mengambil master meja, menggunakan data dummy sementara.");
         return Array.from({ length: 10 }, (_, i) => ({ id: i + 1, number: i + 1 }));
     }
 }
@@ -23,13 +23,10 @@ export async function getTableSessions(): Promise<TableSession[]> {
         currentPage++;
     } while (currentPage <= lastPage);
     
-    const baseUrl = typeof window !== "undefined"
-            ? window.location.origin
-            : "";
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
 
     return allData.map(item => {
         const resolvedTableId = item.table?.number || item.table?.id || item.table_id;
-        
         const nameParam = item.customer_name ? `&name=${encodeURIComponent(item.customer_name)}` : "";
 
         return {
@@ -52,10 +49,7 @@ export async function generateTableSession(tableId: number, customerName: string
         }
     );
 
-    const baseUrl = typeof window !== "undefined"
-            ? window.location.origin
-            : "";
-
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
     const nameParam = customerName ? `&name=${encodeURIComponent(customerName)}` : "";
 
     return {
