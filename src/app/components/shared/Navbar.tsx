@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Scroll, Utensils } from "lucide-react";
@@ -14,10 +15,19 @@ export interface NavbarProps {
 export function Navbar({ tableNumber, onCartClick, cartCount }: NavbarProps) {
     const { totalItems } = useCart();
     const router = useRouter();
+    const [hasSession, setHasSession] = useState(false);
+
+    // Cek apakah ada token sesi meja di sessionStorage
+    useEffect(() => {
+        const token = sessionStorage.getItem("tableToken");
+        setHasSession(!!token);
+    }, []);
 
     const handleOrdersClick = () => {
         const token = sessionStorage.getItem("tableToken") ?? "";
-        router.push(`/orders?table=${tableNumber}&token=${token}`);
+        if (token) {
+            router.push(`/orders?table=${tableNumber}&token=${token}`);
+        }
     };
 
     return (
@@ -32,7 +42,6 @@ export function Navbar({ tableNumber, onCartClick, cartCount }: NavbarProps) {
 
             {/* Right: Table + Orders icon */}
             <div className="flex items-center gap-3 sm:gap-4">
-                {/* Dihapus: hidden sm:block, sekarang muncul di mobile */}
                 <div className="text-right flex flex-col items-end">
                     <p className="text-[9px] sm:text-[10px] text-stone-400 uppercase tracking-widest leading-none">
                         Your Table
@@ -42,20 +51,22 @@ export function Navbar({ tableNumber, onCartClick, cartCount }: NavbarProps) {
                     </p>
                 </div>
 
-                {/* Icon Scroll -> buka /orders */}
-                <button
-                    onClick={handleOrdersClick}
-                    className="relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary text-white hover:bg-primary-30 transition-colors"
-                    aria-label="Lihat pesanan"
-                >
-                    <Scroll size={16} className="sm:w-[18px] sm:h-[18px]" />
-                    {/* Badge jumlah item di cart (kalau ada) */}
-                    {totalItems > 0 && (
-                        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
-                            {totalItems}
-                        </span>
-                    )}
-                </button>
+                {/* TAMPILKAN TOMBOL ORDER HANYA JIKA ADA SESI MEJA */}
+                {hasSession && (
+                    <button
+                        onClick={handleOrdersClick}
+                        className="relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary text-white hover:bg-primary-30 transition-colors"
+                        aria-label="Lihat pesanan"
+                    >
+                        <Scroll size={16} className="sm:w-[18px] sm:h-[18px]" />
+                        {/* Badge jumlah item di cart (kalau ada) */}
+                        {totalItems > 0 && (
+                            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                                {totalItems}
+                            </span>
+                        )}
+                    </button>
+                )}
             </div>
         </nav>
     );
