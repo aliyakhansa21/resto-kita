@@ -1,3 +1,4 @@
+import { ReceiptText } from "lucide-react";
 import type { CheckoutOrder } from "@/types";
 
 interface Props {
@@ -18,7 +19,7 @@ export default function OrderCard({ order, index }: Props) {
             {/* Header */}
             <div className="bg-[#8A5E3D0D] flex items-center justify-between px-5 py-4 border-b border-secondary">
                 <div className="flex items-center gap-2">
-                    <span className="text-base">🧾</span>
+                    <ReceiptText size={18} className="text-primary-50" />
                     <h3 className="font-bold text-base text-primary-50">
                         Order #{index}
                     </h3>
@@ -28,7 +29,7 @@ export default function OrderCard({ order, index }: Props) {
                         Confirmed
                     </span>
                 ) : (
-                    <span className="text-text-xs font-bold text-secondary-50 uppercase tracking-wider bg-secondary-DEFAULT/30 px-3m py-1 rounded-full">
+                    <span className="text-text-xs font-bold text-secondary-50 uppercase tracking-wider bg-secondary-DEFAULT/30 px-3 py-1 rounded-full">
                         New Addition
                     </span>
                 )}
