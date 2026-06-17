@@ -8,29 +8,43 @@ import type { MenuItem, Category } from "@/types";
 interface UseMenuParams {
     categoryId?: string;   
     search?: string;
+    tableToken?: string; 
+    isReady?: boolean;   
 }
 
-export function useMenu({ categoryId = "all", search = "" }: UseMenuParams = {}) {
+export function useMenu({ 
+    categoryId = "all", 
+    search = "", 
+    tableToken, 
+    isReady = true 
+}: UseMenuParams = {}) {
+    
+    const canFetch = Boolean(isReady && tableToken);
+
     const {
         data: allItems = [],
         isLoading: isLoadingItems,
-        isError,
-        error,
-        refetch,
+        isError: isItemsError,
+        error: itemsError,
+        refetch: refetchItems,
     } = useQuery<MenuItem[], Error>({
-        queryKey: ["menu-items"],         
-        queryFn:  fetchMenuItems,         
+        queryKey: ["menu-items", tableToken],         
+        queryFn:  () => fetchMenuItems(tableToken),         
         staleTime: 1000 * 60 * 5,
         retry: 2,
+        enabled: canFetch, 
     });
 
     const {
         data: categories = [],
         isLoading: isLoadingCategories,
+        isError: isCategoriesError,
+        error: categoriesError,
     } = useQuery<Category[], Error>({
-        queryKey: ["categories"],
-        queryFn:  fetchCategories,        
-        staleTime: 1000 * 60 * 10,       
+        queryKey: ["categories", tableToken],
+        queryFn:  () => fetchCategories(tableToken),        
+        staleTime: 1000 * 60 * 10,  
+        enabled: canFetch,     
     });
 
     const menuItems = useMemo(() => {    
@@ -59,9 +73,9 @@ export function useMenu({ categoryId = "all", search = "" }: UseMenuParams = {})
     return {
         menuItems,
         categories,
-        isLoading: isLoadingItems || isLoadingCategories,
-        isError,
-        error,
-        refetch,
+        isLoading: isLoadingItems || isLoadingCategories || (!canFetch && isReady === false),
+        isError: isItemsError || isCategoriesError,
+        error: itemsError || categoriesError,
+        refetch: refetchItems,
     };
 }

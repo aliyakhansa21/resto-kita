@@ -31,7 +31,7 @@ function MenuContent() {
     const [tableToken, setTableToken] = useState("");
     const [tableNumber, setTableNumber] = useState("");
     const [customerName, setCustomerName] = useState("");
-    const [isSessionReady, setIsSessionReady] = useState(false); // Flag untuk gatekeeper
+    const [isSessionReady, setIsSessionReady] = useState(false); 
 
     useEffect(() => {
         const bootstrap = async () => {
@@ -71,6 +71,8 @@ function MenuContent() {
     const { menuItems, categories, isLoading, isError, error } = useMenu({
         categoryId,
         search,
+        tableToken,
+        isReady: isSessionReady
     });
 
     // Cart state from context (frontend-only)
